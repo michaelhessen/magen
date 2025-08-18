@@ -8,6 +8,7 @@
   <!-- Ikoner -->
 <link rel="icon" href="favicon.png" sizes="64x64" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="manifest.webmanifest">
 
 <!-- (valfritt men bra på mobiler) -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,7 +17,7 @@
   <!--
     Magen – Offline webbapp i en fil (index.html)
 
-    Datamodell (lagras i localStorage):
+    Datamodell (lagras i IndexedDB):
       storage.version = "1"
       painLogs: Array<PainEntry>
         PainEntry {
@@ -558,21 +559,62 @@
           firstRunShown: 'firstRunShown'
         };
 
-        function get(key) {
+        // Enkel nyckel-värde-store ovanpå IndexedDB
+        const dbPromise = new Promise((resolve, reject) => {
+          const req = indexedDB.open('magen', 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+
+        function idbGetRaw(key) {
+          return dbPromise.then(db => new Promise((resolve, reject) => {
+            const tx = db.transaction('kv', 'readonly');
+            const store = tx.objectStore('kv');
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          }));
+        }
+
+        function idbSetRaw(key, value) {
+          return dbPromise.then(db => new Promise((resolve, reject) => {
+            const tx = db.transaction('kv', 'readwrite');
+            const store = tx.objectStore('kv');
+            const req = store.put(value, key);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => reject(req.error);
+          }));
+        }
+
+        function idbRemove(key) {
+          return dbPromise.then(db => new Promise((resolve, reject) => {
+            const tx = db.transaction('kv', 'readwrite');
+            const store = tx.objectStore('kv');
+            const req = store.delete(key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          }));
+        }
+
+        async function get(key) {
           try {
-            const raw = localStorage.getItem(key);
+            const raw = await idbGetRaw(key);
             return raw ? JSON.parse(raw) : null;
           } catch (e) {
-            console.error('Läsfel localStorage', e);
+            console.error('Läsfel IndexedDB', e);
             return null;
           }
         }
-        function set(key, value) {
+        async function set(key, value) {
           try {
-            localStorage.setItem(key, JSON.stringify(value));
+            await idbSetRaw(key, JSON.stringify(value));
             return true;
           } catch (e) {
-            console.error('Skrivfel localStorage', e);
+            console.error('Skrivfel IndexedDB', e);
             UI.announce('Kunde inte spara lokalt. Kontrollera lagringsinställningar.');
             return false;
           }
@@ -596,57 +638,57 @@
           return { tema: prefersDark ? 'dark' : 'light', ['smärtskala']: scale, vatska_mal_ml: 2000 };
         }
 
-        function migrateIfNeeded() {
-          const v = localStorage.getItem(KEYS.version);
+        async function migrateIfNeeded() {
+          const v = await idbGetRaw(KEYS.version);
           if (!v || v < '1') {
-            // Initiera tomma arrayer och default-inställningar.
-            set(KEYS.version, '1');
-            set(KEYS.pain, []);
-            set(KEYS.pee, []);
-            set(KEYS.fluid, []);
-            set(KEYS.settings, defaultSettings());
+            await idbSetRaw(KEYS.version, '1');
+            await set(KEYS.pain, []);
+            await set(KEYS.pee, []);
+            await set(KEYS.fluid, []);
+            await set(KEYS.settings, defaultSettings());
           } else {
-            // Säkerställ att alla fält finns
-            const settings = get(KEYS.settings) || defaultSettings();
+            const settings = await get(KEYS.settings) || defaultSettings();
             if (!settings['smärtskala']) settings['smärtskala'] = defaultSettings()['smärtskala'];
             if (typeof settings.vatska_mal_ml !== 'number') settings.vatska_mal_ml = 2000;
             if (!settings.tema) settings.tema = defaultSettings().tema;
-            set(KEYS.settings, settings);
-            if (!Array.isArray(get(KEYS.pain))) set(KEYS.pain, []);
-            if (!Array.isArray(get(KEYS.pee))) set(KEYS.pee, []);
-            if (!Array.isArray(get(KEYS.fluid))) set(KEYS.fluid, []);
+            await set(KEYS.settings, settings);
+            if (!Array.isArray(await get(KEYS.pain))) await set(KEYS.pain, []);
+            if (!Array.isArray(await get(KEYS.pee))) await set(KEYS.pee, []);
+            if (!Array.isArray(await get(KEYS.fluid))) await set(KEYS.fluid, []);
           }
         }
 
-        function loadAll() {
-          migrateIfNeeded();
+        async function loadAll() {
+          await migrateIfNeeded();
+          if (navigator.storage && navigator.storage.persist) {
+            try { navigator.storage.persist(); } catch { /* ignore */ }
+          }
           return {
-            version: localStorage.getItem(KEYS.version) || '1',
-            pain: get(KEYS.pain) || [],
-            pee: get(KEYS.pee) || [],
-            fluid: get(KEYS.fluid) || [],
-            settings: get(KEYS.settings) || defaultSettings(),
-            firstRunShown: get(KEYS.firstRunShown) === true
+            version: (await idbGetRaw(KEYS.version)) || '1',
+            pain: await get(KEYS.pain) || [],
+            pee: await get(KEYS.pee) || [],
+            fluid: await get(KEYS.fluid) || [],
+            settings: await get(KEYS.settings) || defaultSettings(),
+            firstRunShown: await get(KEYS.firstRunShown) === true
           };
         }
 
-        function saveAll(state) {
-          set(KEYS.pain, state.pain);
-          set(KEYS.pee, state.pee);
-          set(KEYS.fluid, state.fluid);
-          set(KEYS.settings, state.settings);
+        async function saveAll(state) {
+          await set(KEYS.pain, state.pain);
+          await set(KEYS.pee, state.pee);
+          await set(KEYS.fluid, state.fluid);
+          await set(KEYS.settings, state.settings);
         }
 
         function markBannerShown() { set(KEYS.firstRunShown, true); }
 
-        function clearAll() {
+        async function clearAll() {
           try {
-            localStorage.removeItem(KEYS.pain);
-            localStorage.removeItem(KEYS.pee);
-            localStorage.removeItem(KEYS.fluid);
-            localStorage.removeItem(KEYS.settings);
-            // behåll version & banner
-            migrateIfNeeded();
+            await idbRemove(KEYS.pain);
+            await idbRemove(KEYS.pee);
+            await idbRemove(KEYS.fluid);
+            await idbRemove(KEYS.settings);
+            await migrateIfNeeded();
           } catch (e) { console.error(e); }
         }
 
@@ -750,18 +792,7 @@
         return { toLocalISO, fromDateTimeStrings, splitISO, newUUID, clamp, sum, mean, median, groupBy, formatDate, formatTime, levelColor, escCsv, parseNumber };
       })();
 
-      const State = (() => {
-        const s = Storage.loadAll();
-        return {
-          pain: s.pain,
-          pee: s.pee,
-          fluid: s.fluid,
-          settings: s.settings,
-          firstRunShown: s.firstRunShown,
-          filters: { from: '', to: '', magont: true, livmoder: true, min: 1, max: 10, meds: 'alla', effekt: 'alla', sok: '' },
-          lastDeleted: null,
-        };
-      })();
+      let State;
 
       const CSV = (() => {
         const HEADERS = {
@@ -1918,8 +1949,23 @@
         return { cache, bind, initTheme, initDefaults, applyTheme, renderPainList, renderPeeList, renderFluidList, renderAll, filteredPain, countsByDay, medsCounts, painLevelsByDayAndType, fluidMlPerDay, openSettingsModal };
       })();
 
-      function init() {
-        UI.cache(); UI.bind(); UI.initTheme(); UI.initDefaults(); UI.renderAll(); Charts.rebuildAll();
+      async function init() {
+        const s = await Storage.loadAll();
+        State = {
+          pain: s.pain,
+          pee: s.pee,
+          fluid: s.fluid,
+          settings: s.settings,
+          firstRunShown: s.firstRunShown,
+          filters: { from: '', to: '', magont: true, livmoder: true, min: 1, max: 10, meds: 'alla', effekt: 'alla', sok: '' },
+          lastDeleted: null,
+        };
+        UI.cache();
+        UI.bind();
+        UI.initTheme();
+        UI.initDefaults();
+        UI.renderAll();
+        Charts.rebuildAll();
       }
 
       return { init };
@@ -1927,6 +1973,12 @@
 
     // Starta appen
     document.addEventListener('DOMContentLoaded', App.init);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
   </script>
 </body>
 </html>
