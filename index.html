@@ -255,8 +255,12 @@
                 <input id="painDate" type="date" required />
               </div>
               <div>
-                <label for="painTime">Tid</label>
+                <label for="painTime">Starttid</label>
                 <input id="painTime" type="time" step="60" required />
+              </div>
+              <div>
+                <label for="painEnd">Sluttid</label>
+                <input id="painEnd" type="time" step="60" required />
               </div>
             </div>
             <div class="row">
@@ -399,6 +403,9 @@
           <div class="canvas-wrap" style="margin-top:10px;">
             <canvas id="painBox"></canvas>
           </div>
+          <div class="canvas-wrap" style="margin-top:10px;">
+            <canvas id="painDur"></canvas>
+          </div>
         </div>
       </div>
     </section>
@@ -505,6 +512,10 @@
         <div class="card">
           <h3>Smärta – median/medel per dag</h3>
           <div class="canvas-wrap"><canvas id="painBox2"></canvas></div>
+        </div>
+        <div class="card">
+          <h3>Smärta – tid med smärta</h3>
+          <div class="canvas-wrap"><canvas id="painDur2"></canvas></div>
         </div>
         <div class="card">
           <h3>Kiss – antal per dag</h3>
@@ -796,7 +807,7 @@
 
       const CSV = (() => {
         const HEADERS = {
-          pain: ['id','datetimeISO','datum','tid','typ','niva','meds','med_effekt','med_effekt_minuter','anteckning'],
+          pain: ['id','startISO','datum','startTid','endISO','endTid','typ','niva','meds','med_effekt','med_effekt_minuter','anteckning'],
           pee: ['id','datetimeISO'],
           fluid: ['id','datetimeISO','volym_ml','dryck']
         };
@@ -818,6 +829,8 @@
               it.timestamp,
               it.datum,
               it.tid,
+              it.sluttimestamp || it.timestamp,
+              it.sluttid || it.tid,
               it.typ,
               it.niva,
               medsStr,
@@ -901,7 +914,7 @@
               const joined = r.join(','); r = joined.split(delimiter).map(x=>x.trim());
             }
             if (r.length !== HEADERS.pain.length) throw new Error(`Rad ${i+1}: fel antal kolumner.`);
-            const [id, datetimeISO, datum, tid, typ, niva, meds, med_effekt, med_effekt_minuter, anteckning] = r;
+            const [id, startISO, datum, startTid, endISO, endTid, typ, niva, meds, med_effekt, med_effekt_minuter, anteckning] = r;
             if (!(typ==='magont' || typ==='livmoder-ont')) throw new Error(`Rad ${i+1}: ogiltig typ.`);
             const n = Number.parseInt(niva,10); if (!(n>=1 && n<=10)) throw new Error(`Rad ${i+1}: nivå måste vara 1–10.`);
             const medsArr = (meds||'').trim() ? meds.split(/[|+]/).map(x=>x.trim()).filter(Boolean) : [];
@@ -910,9 +923,11 @@
             if (effMin!=null && !(effMin>=0 && effMin<=240)) throw new Error(`Rad ${i+1}: minuter 0–240.`);
             const idFinal = (State.pain.some(p=>p.id===id)) ? Utils.newUUID() : id;
             const noteFinal = anteckning ? anteckning + (idFinal!==id ? ' (Importerad)' : '') : (idFinal!==id ? 'Importerad' : '');
-            const iso = datetimeISO || `${datum}T${tid}:00`;
-            const { datum: d2, tid: t2 } = Utils.splitISO(iso);
-            res.push({ id: idFinal, timestamp: iso, datum: d2, tid: t2, typ, niva: n, meds: medsArr, med_effekt: eff||null, med_effekt_minuter: effMin, anteckning: noteFinal });
+            const isoStart = startISO || `${datum}T${startTid}:00`;
+            const isoEnd = endISO || `${datum}T${endTid}:00`;
+            const { datum: d2, tid: t2 } = Utils.splitISO(isoStart);
+            const { tid: slutTid2 } = Utils.splitISO(isoEnd);
+            res.push({ id: idFinal, timestamp: isoStart, sluttimestamp: isoEnd, datum: d2, tid: t2, sluttid: slutTid2, typ, niva: n, meds: medsArr, med_effekt: eff||null, med_effekt_minuter: effMin, anteckning: noteFinal });
           }
           return res;
         }
@@ -1177,6 +1192,42 @@
           drawBarsCounts(canvas, perDay);
         }
 
+        function drawPainDurations(canvas, perDay) {
+          const { ctx, w, h } = setupCanvas(canvas);
+          const padding = { l: 40, r: 10, t: 10, b: 40 };
+          const entries = Array.from(perDay.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+          const labels = entries.map(e=>e[0]);
+          const values = entries.map(e=>e[1]);
+          const maxVal = values.length? Math.max(...values):0;
+          axis(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b);
+          const maxY = yTicksInteger(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b, maxVal);
+          const plotW = w-padding.l-padding.r, plotH = h-padding.t-padding.b;
+          const barW = Math.max(10, plotW / (labels.length*1.2 || 1));
+          const styles = getComputedStyle(document.documentElement);
+          const color = styles.getPropertyValue('--primary').trim();
+          ctx.fillStyle = color;
+          const hitboxes = [];
+          for (let i=0;i<labels.length;i++) {
+            const x = padding.l + i*(barW*1.2);
+            const hVal = (values[i]/maxY)*plotH;
+            const y = padding.t + plotH - hVal;
+            ctx.fillRect(x, y, barW, hVal);
+            hitboxes.push({ x, y, w: barW, h: hVal, label: labels[i], val: values[i] });
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+            ctx.font = '12px system-ui';
+            ctx.save(); ctx.translate(x + barW/2, h-4); ctx.rotate(-Math.PI/6); ctx.textAlign='right'; ctx.fillText(labels[i],0,0); ctx.restore();
+            ctx.fillStyle = color;
+          }
+          canvas.onmousemove = (ev) => {
+            const rect = canvas.getBoundingClientRect(); const mx = ev.clientX-rect.left, my=ev.clientY-rect.top;
+            for (const hb of hitboxes) {
+              if (mx>=hb.x && mx<=hb.x+hb.w && my>=hb.y && my<=hb.y+hb.h) { showTip(`<b>${hb.label}</b><br/>${hb.val} min`, ev.clientX, ev.clientY); return; }
+            }
+            hideTip();
+          };
+          canvas.onmouseleave = hideTip;
+        }
+
         function drawPainBox(canvas, perDayPerTyp) {
           // perDayPerTyp: Map<datum, { magont: [nivåer], liv: [nivåer] }>
           const { ctx, w, h } = setupCanvas(canvas);
@@ -1222,6 +1273,8 @@
           drawBarsMeds(document.getElementById('painMeds'), medsCounts);
           const perDayTyp = UI.painLevelsByDayAndType(UI.filteredPain());
           drawPainBox(document.getElementById('painBox'), perDayTyp);
+          const durPain = UI.painMinutesByDay(UI.filteredPain());
+          drawPainDurations(document.getElementById('painDur'), durPain);
 
           // Kiss
           const peeCounts = UI.countsByDay(State.pee);
@@ -1236,6 +1289,7 @@
           drawBarsCounts(document.getElementById('painBars2'), UI.countsByDay(State.pain));
           drawBarsMeds(document.getElementById('painMeds2'), UI.medsCounts(State.pain));
           drawPainBox(document.getElementById('painBox2'), UI.painLevelsByDayAndType(State.pain));
+          drawPainDurations(document.getElementById('painDur2'), UI.painMinutesByDay(State.pain));
           drawPeeBars(document.getElementById('peeBars2'), peeCounts);
           drawFluidBars(document.getElementById('fluidBars2'), fluidPerDay, State.settings.vatska_mal_ml);
         }
@@ -1273,6 +1327,7 @@
           // pain form
           els.painDate = document.getElementById('painDate');
           els.painTime = document.getElementById('painTime');
+          els.painEnd = document.getElementById('painEnd');
           els.painLevel = document.getElementById('painLevel');
           els.painScaleText = document.getElementById('painScaleText');
           els.painForm = document.getElementById('painForm');
@@ -1369,7 +1424,7 @@
           const now = new Date(); now.setSeconds(0,0);
           const d = Utils.toLocalISO(now);
           const { datum, tid } = Utils.splitISO(d);
-          els.painDate.value = datum; els.painTime.value = tid;
+          els.painDate.value = datum; els.painTime.value = tid; els.painEnd.value = tid;
           els.fluidDate.value = datum; els.fluidTime.value = tid; els.goalMl.textContent = String(State.settings.vatska_mal_ml);
           els.peeDate.value = datum; els.peeTime.value = tid;
           updateScaleText();
@@ -1410,7 +1465,7 @@
 
         function onPainSubmit(e) {
           e.preventDefault();
-          const dateStr = els.painDate.value; const timeStr = els.painTime.value;
+          const dateStr = els.painDate.value; const startStr = els.painTime.value; const endStr = els.painEnd.value;
           const typ = getSelectedPainType();
           const niva = Utils.clamp(parseInt(els.painLevel.value,10)||1,1,10);
           const meds = els.medsChecks.filter(c=>c.checked).map(c=>c.value);
@@ -1431,11 +1486,15 @@
             }
           }
           const note = els.painNote.value.trim();
-          if (!dateStr || !timeStr) { announce('Datum och tid krävs.'); return; }
-          const dt = Utils.fromDateTimeStrings(dateStr, timeStr);
-          const iso = Utils.toLocalISO(dt);
-          const { datum, tid } = Utils.splitISO(iso);
-          const entry = { id: Utils.newUUID(), timestamp: iso, datum, tid, typ, niva, meds, med_effekt, med_effekt_minuter, anteckning: note };
+          if (!dateStr || !startStr || !endStr) { announce('Datum, start- och sluttid krävs.'); return; }
+          const dtStart = Utils.fromDateTimeStrings(dateStr, startStr);
+          const dtEnd = Utils.fromDateTimeStrings(dateStr, endStr);
+          if (dtEnd < dtStart) { announce('Sluttid måste vara efter starttid.'); return; }
+          const isoStart = Utils.toLocalISO(dtStart);
+          const isoEnd = Utils.toLocalISO(dtEnd);
+          const { datum, tid } = Utils.splitISO(isoStart);
+          const { tid: sluttid } = Utils.splitISO(isoEnd);
+          const entry = { id: Utils.newUUID(), timestamp: isoStart, sluttimestamp: isoEnd, datum, tid, sluttid, typ, niva, meds, med_effekt, med_effekt_minuter, anteckning: note };
           State.pain.push(entry);
           State.pain.sort((a,b)=>b.timestamp.localeCompare(a.timestamp));
           Storage.saveAll(State);
@@ -1444,6 +1503,7 @@
           els.painNote.value='';
           for (const c of els.medsChecks) c.checked=false; for (const r of els.medEffRadios) { r.checked=false; r.disabled=true; }
           els.effektMin.value=''; els.effektMin.disabled=true;
+          els.painEnd.value = els.painTime.value;
           renderPainList(); Charts.rebuildAll();
         }
 
@@ -1483,6 +1543,16 @@
           }
           return map;
         }
+        function painMinutesByDay(arr) {
+          const m = new Map();
+          for (const p of arr) {
+            const start = new Date(p.timestamp);
+            const end = new Date(p.sluttimestamp || p.timestamp);
+            const mins = Math.max(0, Math.round((end - start) / 60000));
+            m.set(p.datum, (m.get(p.datum) || 0) + mins);
+          }
+          return m;
+        }
         function fluidMlPerDay(arr) {
           const m = new Map();
           for (const it of arr) { const d = Utils.splitISO(it.timestamp).datum; m.set(d, (m.get(d)||0) + (it.volym_ml||0)); }
@@ -1516,7 +1586,8 @@
           const effStr = (p.meds&&p.meds.length && p.med_effekt) ? `, effekt: ${p.med_effekt}${(p.med_effekt_minuter!=null)?` (${p.med_effekt_minuter} min)`:''}` : '';
           const noteStr = (p.anteckning) ? ` — ${p.anteckning}` : '';
           const levelBadge = `<span class="level-badge" style="background:${colorForLevel(p.niva)}">${p.niva}</span>`;
-          left.innerHTML = `<div><b>${icon} ${p.tid}</b> • ${p.typ} ${levelBadge}${medsStr}${effStr}${noteStr}</div>
+          const endStr = p.sluttid ? `–${p.sluttid}` : '';
+          left.innerHTML = `<div><b>${icon} ${p.tid}${endStr}</b> • ${p.typ} ${levelBadge}${medsStr}${effStr}${noteStr}</div>
                             <div class="meta">${p.datum}</div>`;
           // right actions
           const btnEdit = buttonSmall('Redigera', 'ghost', ()=>openEditPain(p.id));
@@ -1563,7 +1634,8 @@
             <form id="editPainForm" data-id="${p.id}">
               <div class="row">
                 <div><label>Datum</label><input id="epDate" type="date" value="${p.datum}" required></div>
-                <div><label>Tid</label><input id="epTime" type="time" step="60" value="${p.tid}" required></div>
+                <div><label>Start</label><input id="epTime" type="time" step="60" value="${p.tid}" required></div>
+                <div><label>Slut</label><input id="epEnd" type="time" step="60" value="${p.sluttid || p.tid}" required></div>
               </div>
               <div class="row" style="margin-top:6px;">
                 <label><input type="radio" name="epTyp" value="magont" ${p.typ==='magont'?'checked':''}> Magont</label>
@@ -1600,7 +1672,7 @@
             e.preventDefault();
             const id = e.target.getAttribute('data-id');
             const idx = State.pain.findIndex(x=>x.id===id); if (idx<0) return;
-            const d = e.target.querySelector('#epDate').value; const t = e.target.querySelector('#epTime').value;
+            const d = e.target.querySelector('#epDate').value; const t = e.target.querySelector('#epTime').value; const te = e.target.querySelector('#epEnd').value;
             const typ = (e.target.querySelector('input[name="epTyp"]:checked')||{}).value || p.typ;
             const niva = Utils.clamp(parseInt(e.target.querySelector('#epNiva').value,10)||p.niva,1,10);
             const meds = Array.from(e.target.querySelectorAll('.epMed')).filter(c=>c.checked).map(c=>c.value);
@@ -1609,9 +1681,12 @@
             let effMin = (eff==='ja' || eff==='delvis') ? (min==null? null : min) : null;
             if ((eff==='ja' || eff==='delvis') && (effMin==null || effMin<0 || effMin>240)) { announce('Ange minuter 0–240.'); return; }
             if (meds.length===0) { eff = null; effMin = null; }
-            const iso = Utils.toLocalISO(Utils.fromDateTimeStrings(d,t));
-            const { datum, tid } = Utils.splitISO(iso);
-            State.pain[idx] = { ...State.pain[idx], datum, tid, timestamp: iso, typ, niva, meds, med_effekt: eff, med_effekt_minuter: effMin, anteckning: e.target.querySelector('#epNote').value.trim() };
+            const isoStart = Utils.toLocalISO(Utils.fromDateTimeStrings(d,t));
+            const isoEnd = Utils.toLocalISO(Utils.fromDateTimeStrings(d,te));
+            if (isoEnd < isoStart) { announce('Sluttid måste vara efter starttid.'); return; }
+            const { datum, tid } = Utils.splitISO(isoStart);
+            const { tid: sluttid } = Utils.splitISO(isoEnd);
+            State.pain[idx] = { ...State.pain[idx], datum, tid, sluttid, timestamp: isoStart, sluttimestamp: isoEnd, typ, niva, meds, med_effekt: eff, med_effekt_minuter: effMin, anteckning: e.target.querySelector('#epNote').value.trim() };
             Storage.saveAll(State); closeModal(); renderPainList(); Charts.rebuildAll(); announce('Ändringar sparade.');
           });
         }
@@ -1875,14 +1950,18 @@
             const cnt = Math.floor(Math.random()*3);
             for (let i=0;i<cnt;i++) {
               const dt = new Date(base.getTime() + Math.floor(Math.random()*10)*3600000);
-              const iso = Utils.toLocalISO(dt);
-              const { datum, tid } = Utils.splitISO(iso);
+              const dur = (15 + Math.floor(Math.random()*90))*60000;
+              const dtEnd = new Date(dt.getTime() + dur);
+              const isoStart = Utils.toLocalISO(dt);
+              const isoEnd = Utils.toLocalISO(dtEnd);
+              const { datum, tid } = Utils.splitISO(isoStart);
+              const { tid: sluttid } = Utils.splitISO(isoEnd);
               const typ = Math.random()<0.6? 'magont':'livmoder-ont';
               const niva = 2 + Math.floor(Math.random()*8);
               const meds = typ==='magont' ? (Math.random()<0.4? ['ibuprofen'] : (Math.random()<0.2? ['ibuprofen','paracetamol']: [])) : [];
               const eff = meds.length? (['ja','delvis','nej','vet ej'][Math.floor(Math.random()*4)]) : null;
               const effMin = (eff==='ja'||eff==='delvis')? Math.floor(Math.random()*120): null;
-              State.pain.push({ id: Utils.newUUID(), timestamp: iso, datum, tid, typ, niva, meds, med_effekt: eff, med_effekt_minuter: effMin, anteckning: '' });
+              State.pain.push({ id: Utils.newUUID(), timestamp: isoStart, sluttimestamp: isoEnd, datum, tid, sluttid, typ, niva, meds, med_effekt: eff, med_effekt_minuter: effMin, anteckning: '' });
             }
             // kiss
             const kc = 6 + Math.floor(Math.random()*4);
@@ -1946,7 +2025,7 @@
 
         function announce(msg) { els.live.textContent = msg; }
 
-        return { cache, bind, initTheme, initDefaults, applyTheme, renderPainList, renderPeeList, renderFluidList, renderAll, filteredPain, countsByDay, medsCounts, painLevelsByDayAndType, fluidMlPerDay, openSettingsModal };
+        return { cache, bind, initTheme, initDefaults, applyTheme, renderPainList, renderPeeList, renderFluidList, renderAll, filteredPain, countsByDay, medsCounts, painLevelsByDayAndType, painMinutesByDay, fluidMlPerDay, openSettingsModal };
       })();
 
       async function init() {
