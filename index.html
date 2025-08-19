@@ -497,6 +497,11 @@
 
     <!-- Statistik -->
     <section id="tab-stat" role="tabpanel" aria-labelledby="tabbtn-stat" hidden>
+      <div class="row" id="statPainTypeBtns" style="gap:4px;margin-bottom:10px;">
+        <button class="btn stat-pain-btn tab-active" data-type="both">Båda</button>
+        <button class="btn stat-pain-btn" data-type="magont">Magont</button>
+        <button class="btn stat-pain-btn" data-type="livmoder-ont">Livmoder-ont</button>
+      </div>
       <div class="grid grid-2">
         <div class="card">
           <h3>Smärta – nivå över tid</h3>
@@ -1328,14 +1333,15 @@
 
         function rebuildAll() {
           // Smärta (huvud)
-          drawLinePain(document.getElementById('painLine'), UI.filteredPain());
-          const countsPain = UI.countsByDay(UI.filteredPain());
+          const painFiltered = UI.filteredPain();
+          drawLinePain(document.getElementById('painLine'), painFiltered);
+          const countsPain = UI.countsByDay(painFiltered);
           drawBarsCounts(document.getElementById('painBars'), countsPain);
-          const medsCounts = UI.medsCounts(UI.filteredPain());
+          const medsCounts = UI.medsCounts(painFiltered);
           drawBarsMeds(document.getElementById('painMeds'), medsCounts);
-          const perDayTyp = UI.painLevelsByDayAndType(UI.filteredPain());
+          const perDayTyp = UI.painLevelsByDayAndType(painFiltered);
           drawPainBox(document.getElementById('painBox'), perDayTyp);
-          const painDur = painMinutesPerDay(UI.filteredPain());
+          const painDur = painMinutesPerDay(painFiltered);
           drawBarsDuration(document.getElementById('painDuration'), painDur);
 
           // Kiss
@@ -1347,12 +1353,18 @@
           drawFluidBars(document.getElementById('fluidBars'), fluidPerDay, State.settings.vatska_mal_ml);
 
           // Statistik (sammanställning)
-          const painFiltered = UI.filteredPain();
-          drawLinePain(document.getElementById('painLine2'), painFiltered);
-          drawBarsCounts(document.getElementById('painBars2'), countsPain);
-          drawBarsMeds(document.getElementById('painMeds2'), medsCounts);
-          drawPainBox(document.getElementById('painBox2'), perDayTyp);
-          drawBarsDuration(document.getElementById('painDuration2'), painDur);
+          let statsPain = painFiltered;
+          if (State.statPain === 'magont') statsPain = painFiltered.filter(p=>p.typ==='magont');
+          else if (State.statPain === 'livmoder-ont') statsPain = painFiltered.filter(p=>p.typ==='livmoder-ont');
+          drawLinePain(document.getElementById('painLine2'), statsPain);
+          const statsCounts = UI.countsByDay(statsPain);
+          drawBarsCounts(document.getElementById('painBars2'), statsCounts);
+          const statsMeds = UI.medsCounts(statsPain);
+          drawBarsMeds(document.getElementById('painMeds2'), statsMeds);
+          const statsPerDayTyp = UI.painLevelsByDayAndType(statsPain);
+          drawPainBox(document.getElementById('painBox2'), statsPerDayTyp);
+          const statsDur = painMinutesPerDay(statsPain);
+          drawBarsDuration(document.getElementById('painDuration2'), statsDur);
           drawPeeBars(document.getElementById('peeBars2'), peeCounts);
           drawFluidBars(document.getElementById('fluidBars2'), fluidPerDay, State.settings.vatska_mal_ml);
         }
@@ -1435,6 +1447,9 @@
           els.fluidList = document.getElementById('fluidList');
           els.fluidEmpty = document.getElementById('fluidEmpty');
 
+          // stats
+          els.statPainBtns = Array.from(document.querySelectorAll('.stat-pain-btn'));
+
           // modal & snackbar
           els.modalBackdrop = document.getElementById('modalBackdrop');
           els.modalContent = document.getElementById('modalContent');
@@ -1459,6 +1474,14 @@
           // filters
           els.painFilters.btnApply.addEventListener('click', applyFilters);
           els.painFilters.btnClr.addEventListener('click', resetFilters);
+          // stat pain type buttons
+          for (const btn of els.statPainBtns) {
+            btn.addEventListener('click', () => {
+              State.statPain = btn.dataset.type;
+              for (const b of els.statPainBtns) b.classList.toggle('tab-active', b===btn);
+              Charts.rebuildAll();
+            });
+          }
           // pee
           els.btnPeeNow.addEventListener('click', addPeeNow);
           els.btnPeeAdd.addEventListener('click', addPeeCustom);
@@ -2091,6 +2114,7 @@
           firstRunShown: s.firstRunShown,
           filters: { from: '', to: '', magont: true, livmoder: true, min: 1, max: 10, meds: 'alla', effekt: 'alla', sok: '' },
           lastDeleted: null,
+          statPain: 'both',
         };
         UI.cache();
         UI.bind();
