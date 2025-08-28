@@ -73,7 +73,20 @@
       --danger: #ef4444;
       --shadow: 0 6px 24px rgba(15, 23, 42, 0.08);
       --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
       --surface: linear-gradient(180deg, rgba(167,139,250,0.08), rgba(236,72,153,0.08));
+      --surface-strong: linear-gradient(180deg, rgba(167,139,250,0.16), rgba(236,72,153,0.16));
+      /* Komponent-tokens */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --chip-bg: rgba(100,116,139,0.12);
+      --chip-fg: var(--text);
+      --chip-selected-bg: var(--accent);
+      --chip-selected-fg: #ffffff;
+      --duration-fast: 120ms;
+      --duration: 180ms;
     }
     [data-theme="dark"] {
       /* Mörkt läge */
@@ -91,7 +104,13 @@
       --danger: #f87171;
       --shadow: 0 6px 24px rgba(0,0,0,0.4);
       --shadow-sm: 0 2px 10px rgba(0,0,0,0.35);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
       --surface: linear-gradient(180deg, rgba(167,139,250,0.12), rgba(236,72,153,0.12));
+      --surface-strong: linear-gradient(180deg, rgba(167,139,250,0.2), rgba(236,72,153,0.2));
+      --chip-bg: rgba(148,163,184,0.18);
+      --chip-fg: var(--text);
+      --chip-selected-bg: var(--accent-600);
+      --chip-selected-fg: #ffffff;
     }
 
     * { box-sizing: border-box; }
@@ -135,14 +154,11 @@
     .btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-    main { max-width: 1000px; margin: 10px auto 60px; padding: 0 16px; }
+    main { max-width: 1000px; margin: 10px auto 96px; padding: 0 16px; }
 
-    .tabs {
-      position: sticky; top: 56px; z-index: 20; /* below header */
-      background: var(--bg); padding: 6px 16px; box-shadow: var(--shadow-sm);
-    }
-    .tabs .tablist { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .tabs button { width: 100%; }
+    .tabs { display: none !important; }
+    .tabs .tablist { display: none; }
+    .tabs button { display: none; }
     .tab-active { background: var(--accent-600); }
 
     .grid { display: grid; gap: 12px; }
@@ -152,9 +168,10 @@
     }
 
     .card {
-      background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; border: 1px solid rgba(100,116,139,0.15);
+      background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 14px; border: 1px solid rgba(100,116,139,0.15);
     }
     .card h3 { margin-top: 0; font-size: 16px; }
+    .card.soft { background: var(--surface); border: 0; }
 
     .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .row > * { flex: 1; }
@@ -210,6 +227,46 @@
 
     [hidden] { display: none !important; }
 
+    /* Chips & fields */
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-fg); border: 1px solid rgba(100,116,139,0.2); cursor: pointer; user-select: none; transition: background var(--duration) ease, transform var(--duration-fast) ease; }
+    .chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .chip:has(input:checked) { background: var(--chip-selected-bg); color: var(--chip-selected-fg); border-color: transparent; }
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .field-card { background: rgba(100,116,139,0.08); border: 1px solid rgba(100,116,139,0.2); padding: 8px; border-radius: var(--radius-md); }
+
+    /* Dashboard */
+    #dashboard { margin-top: 10px; }
+    .home-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .home-card { position: relative; overflow: hidden; border-radius: var(--radius-xl); padding: 16px; background: var(--surface-strong); box-shadow: var(--shadow-lg); border: 1px solid rgba(100,116,139,0.15); cursor: pointer; }
+    .home-card:active { transform: translateY(1px); }
+    .home-card .big { font-size: 28px; font-weight: 800; margin: 4px 0 8px; }
+    .home-card .meta { color: var(--muted); }
+    @media (min-width: 480px) { .home-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 860px) { .home-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    /* Bottom action bar */
+    .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card); box-shadow: 0 -6px 24px rgba(15,23,42,0.12); border-top: 1px solid rgba(100,116,139,0.2); }
+    .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 8px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .bar-btn { appearance: none; background: transparent; border: 1px solid rgba(100,116,139,0.2); color: var(--text); border-radius: 999px; padding: 10px 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .bar-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+    .bar-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    /* Floating action button */
+    .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 64px; z-index: 45; background: var(--primary); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: var(--shadow-lg); cursor: pointer; }
+    .fab:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    /* Bottom sheets */
+    .sheet-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.5); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
+    .sheet-backdrop.open { display: flex; }
+    .sheet { background: var(--card); color: var(--text); width: 100%; max-width: 720px; max-height: 90vh; border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); box-shadow: var(--shadow-lg); transform: translateY(100%); transition: transform var(--duration) ease; border: 1px solid rgba(100,116,139,0.2); }
+    .sheet.open { transform: translateY(0); }
+    .sheet .sheet-header { position: sticky; top: 0; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
+    .sheet .sheet-body { padding: 12px 16px 80px; overflow: auto; max-height: calc(90vh - 120px); }
+    .sheet .sheet-actions { position: sticky; bottom: 0; background: linear-gradient(to top, var(--card), rgba(0,0,0,0)); padding: 10px 16px 16px; display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* Focus visibility */
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
@@ -234,7 +291,29 @@
       Dina uppgifter sparas endast lokalt i denna webbapp.
     </p>
 
-    <nav class="tabs" aria-label="Flikar">
+    <!-- Start/Dashboard -->
+    <section id="dashboard" aria-label="Start">
+      <div class="home-grid">
+        <div class="home-card" id="cardPain" role="button" tabindex="0" aria-label="Öppna Smärta">
+          <div class="big">💢 Smärta</div>
+          <div class="meta">Logga tillfälle, se lista och grafik</div>
+        </div>
+        <div class="home-card" id="cardPee" role="button" tabindex="0" aria-label="Öppna Kiss">
+          <div class="big">🚻 Kiss</div>
+          <div class="meta">Snabbt "nu" eller vald tid</div>
+        </div>
+        <div class="home-card" id="cardFluid" role="button" tabindex="0" aria-label="Öppna Vätska">
+          <div class="big">💧 Vätska</div>
+          <div class="meta">Följ intag och mål</div>
+        </div>
+        <div class="home-card" id="cardStats" role="button" tabindex="0" aria-label="Öppna Statistik">
+          <div class="big">📊 Statistik</div>
+          <div class="meta">Översikt över allt</div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Flikar" hidden aria-hidden="true">
       <div class="tablist" role="tablist">
         <button class="btn tab-active" role="tab" aria-selected="true" aria-controls="tab-smarta" id="tabbtn-smarta">Smärta</button>
         <button class="btn" role="tab" aria-selected="false" aria-controls="tab-kiss" id="tabbtn-kiss">Kiss</button>
@@ -247,75 +326,12 @@
     <section id="tab-smarta" role="tabpanel" aria-labelledby="tabbtn-smarta">
       <div class="grid grid-2">
         <div class="card" id="painFormCard">
-          <h3>Nytt smärttillfälle</h3>
-          <form id="painForm" autocomplete="off">
-            <div class="row">
-              <div>
-                <label for="painDate">Datum</label>
-                <input id="painDate" type="date" required />
-              </div>
-              <div>
-                <label for="painStart">Starttid</label>
-                <input id="painStart" type="time" step="60" required />
-              </div>
-              <div>
-                <label for="painEnd">Sluttid (valfritt)</label>
-                <input id="painEnd" type="time" step="60" />
-              </div>
-            </div>
-            <div class="row">
-              <fieldset style="border:0;padding:0;margin:0;">
-                <legend class="section-title">Typ</legend>
-                <div class="row">
-                  <label><input type="radio" name="painType" value="magont" checked /> Magont</label>
-                  <label><input type="radio" name="painType" value="livmoder-ont" /> Livmoder‑ont</label>
-                </div>
-              </fieldset>
-            </div>
-            <div>
-              <label for="painLevel">Nivå (1–10)</label>
-              <input id="painLevel" type="range" min="1" max="10" value="4" list="ticks10" />
-              <datalist id="ticks10">
-                <option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option><option value="10"></option>
-              </datalist>
-              <div class="range-meta"><span>1</span><span>10</span></div>
-              <div id="painScaleText" class="scale-note">Beskrivning visas här…</div>
-            </div>
-
-            <div id="painMedsSection" hidden>
-              <div class="section-title">Smärtlindring</div>
-              <div class="row">
-                <label><input type="checkbox" value="ibuprofen" class="medsChk" /> ibuprofen</label>
-                <label><input type="checkbox" value="paracetamol" class="medsChk" /> paracetamol</label>
-                <label><input type="checkbox" value="naproxen" class="medsChk" /> naproxen</label>
-              </div>
-              <fieldset style="border:0;padding:0;margin-top:8px;">
-                <legend class="section-title">Effekt</legend>
-                <div class="row">
-                  <label><input type="radio" name="medEffekt" value="ja" disabled /> Ja</label>
-                  <label><input type="radio" name="medEffekt" value="delvis" disabled /> Delvis</label>
-                  <label><input type="radio" name="medEffekt" value="nej" disabled /> Nej</label>
-                  <label><input type="radio" name="medEffekt" value="vet ej" disabled /> Vet ej</label>
-                </div>
-                <div class="row" style="margin-top:6px;">
-                  <div>
-                    <label for="effektMin">Efter hur länge? (min)</label>
-                    <input id="effektMin" type="number" min="0" max="240" step="1" placeholder="t.ex. 45" disabled />
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-
-            <div style="margin-top:10px;">
-              <label for="painNote">Anteckning</label>
-              <textarea id="painNote" placeholder="Kort notis…"></textarea>
-            </div>
-
-            <div class="row" style="margin-top:12px;">
-              <div class="spacer"></div>
-              <button class="btn ok" type="submit" title="Lägg till smärtlogg">Lägg till</button>
-            </div>
-          </form>
+          <h3>Logga smärta</h3>
+          <div class="row" style="align-items:center;">
+            <div class="help">Öppna bladet för att registrera ett tillfälle.</div>
+            <div class="spacer"></div>
+            <button id="openPainSheet" class="btn ok" type="button" title="Öppna smärtblad">Öppna blad</button>
+          </div>
         </div>
 
         <div class="card filters">
@@ -414,23 +430,14 @@
     <!-- Kiss -->
     <section id="tab-kiss" role="tabpanel" aria-labelledby="tabbtn-kiss" hidden>
       <div class="grid grid-2">
-        <div class="card">
-          <h3>Registrera kiss</h3>
-          <div class="row">
-            <button id="btnPeeNow" class="btn ok" title="Lägg till med aktuell tid">Lägg till nu</button>
-            <div class="spacer"></div>
-          </div>
-          <div class="row" style="margin-top:10px;">
-            <div>
-              <label for="peeDate">Datum</label>
-              <input id="peeDate" type="date" />
-            </div>
-            <div>
-              <label for="peeTime">Tid</label>
-              <input id="peeTime" type="time" step="60" />
-            </div>
-            <div style="align-self: flex-end;">
-              <button id="btnPeeAdd" class="btn" title="Lägg till vald tid">Lägg till</button>
+        <div class="card soft">
+          <h3>Snabb kiss</h3>
+          <div class="hero">
+            <div class="emoji">🚻</div>
+            <div class="help">Tryck för att registrera nu, eller planera tid.</div>
+            <div class="row" style="gap:8px; justify-content:flex-end;">
+              <button id="peeQuickNow" class="btn ok" type="button">Lägg till nu</button>
+              <button id="openPeeSheet" class="btn" type="button">Planera</button>
             </div>
           </div>
         </div>
@@ -451,35 +458,13 @@
     <!-- Vätska -->
     <section id="tab-vatska" role="tabpanel" aria-labelledby="tabbtn-vatska" hidden>
       <div class="grid grid-2">
-        <div class="card">
-          <h3>Registrera vätska</h3>
-          <form id="fluidForm">
-            <div class="row">
-              <div>
-                <label for="fluidDate">Datum</label>
-                <input id="fluidDate" type="date" required />
-              </div>
-              <div>
-                <label for="fluidTime">Tid</label>
-                <input id="fluidTime" type="time" step="60" required />
-              </div>
-            </div>
-            <div class="row">
-              <div>
-                <label for="fluidVol">Volym (ml)</label>
-                <input id="fluidVol" type="number" min="1" max="5000" step="1" required placeholder="t.ex. 300" />
-              </div>
-              <div>
-                <label for="fluidType">Dryck (valfritt)</label>
-                <input id="fluidType" type="text" placeholder="t.ex. vatten" />
-              </div>
-            </div>
-            <div class="row" style="margin-top:12px;">
-              <div class="help">Dagligt mål: <span id="goalMl">2000</span> ml</div>
-              <div class="spacer"></div>
-              <button class="btn ok" type="submit">Lägg till</button>
-            </div>
-          </form>
+        <div class="card soft">
+          <h3>Mål & snabbadd</h3>
+          <div class="row" style="align-items:center;">
+            <div class="help">Dagligt mål: <span id="goalMirror">2000</span> ml</div>
+            <div class="spacer"></div>
+            <button id="openFluidSheet" class="btn ok" type="button">Lägg till</button>
+          </div>
         </div>
         <div class="card">
           <h3>Grafik</h3>
@@ -552,6 +537,184 @@
     </div>
   </div>
 
+  <!-- Bottom sheets -->
+  <div id="painSheet" class="sheet-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet" role="document">
+      <div class="sheet-header">
+        <strong>Hej! Logga smärta</strong>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" id="closePainSheet">Stäng</button>
+      </div>
+      <div class="sheet-body">
+        <form id="painForm" autocomplete="off">
+          <div class="row">
+            <div class="field-card">
+              <label for="painDate">Datum</label>
+              <input id="painDate" type="date" required />
+            </div>
+            <div class="field-card">
+              <label for="painStart">Starttid</label>
+              <input id="painStart" type="time" step="60" required />
+            </div>
+            <div class="field-card">
+              <label for="painEnd">Sluttid (valfritt)</label>
+              <input id="painEnd" type="time" step="60" />
+            </div>
+          </div>
+          <div class="row">
+            <fieldset style="border:0;padding:0;margin:0; width:100%">
+              <legend class="section-title">Typ</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="radio" name="painType" value="magont" checked /><span>Magont</span></label>
+                <label class="chip"><input type="radio" name="painType" value="livmoder-ont" /><span>Livmoder‑ont</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <div>
+            <div class="row" style="align-items:center;">
+              <label for="painLevel" style="flex:0 0 auto">Nivå (1–10)</label>
+              <span id="painLevelBadge" class="level-badge" aria-live="polite" title="Aktuell nivå">4</span>
+            </div>
+            <input id="painLevel" type="range" min="1" max="10" value="4" list="ticks10" />
+            <datalist id="ticks10">
+              <option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option><option value="10"></option>
+            </datalist>
+            <div class="range-meta"><span>1</span><span>10</span></div>
+            <div id="painScaleText" class="scale-note">Beskrivning visas här…</div>
+          </div>
+
+          <div id="painMedsSection" hidden>
+            <div class="section-title">Smärtlindring</div>
+            <div class="chip-group">
+              <label class="chip"><input type="checkbox" value="ibuprofen" class="medsChk" /> <span>ibuprofen</span></label>
+              <label class="chip"><input type="checkbox" value="paracetamol" class="medsChk" /> <span>paracetamol</span></label>
+              <label class="chip"><input type="checkbox" value="naproxen" class="medsChk" /> <span>naproxen</span></label>
+            </div>
+            <fieldset style="border:0;padding:0;margin-top:8px;">
+              <legend class="section-title">Effekt</legend>
+              <div class="chip-group">
+                <label class="chip"><input type="radio" name="medEffekt" value="ja" disabled /> <span>Ja</span></label>
+                <label class="chip"><input type="radio" name="medEffekt" value="delvis" disabled /> <span>Delvis</span></label>
+                <label class="chip"><input type="radio" name="medEffekt" value="nej" disabled /> <span>Nej</span></label>
+                <label class="chip"><input type="radio" name="medEffekt" value="vet ej" disabled /> <span>Vet ej</span></label>
+              </div>
+              <div class="row" style="margin-top:6px;">
+                <div class="field-card">
+                  <label for="effektMin">Efter hur länge? (min)</label>
+                  <input id="effektMin" type="number" min="0" max="240" step="1" placeholder="t.ex. 45" disabled />
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label for="painNote">Anteckning</label>
+            <textarea id="painNote" placeholder="Kort notis…"></textarea>
+          </div>
+
+          <div class="sheet-actions">
+            <button class="btn ghost" type="button" id="closePainSheet2">Stäng</button>
+            <button class="btn ok" type="submit" title="Lägg till smärtlogg">Lägg till</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="peeSheet" class="sheet-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet" role="document">
+      <div class="sheet-header">
+        <strong>Registrera kiss</strong>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" id="closePeeSheet">Stäng</button>
+      </div>
+      <div class="sheet-body">
+        <div class="row" style="margin-bottom:8px;">
+          <button id="btnPeeNow" class="btn ok" title="Lägg till med aktuell tid" type="button">Lägg till nu</button>
+          <div class="spacer"></div>
+        </div>
+        <div class="row">
+          <div class="field-card">
+            <label for="peeDate">Datum</label>
+            <input id="peeDate" type="date" />
+          </div>
+          <div class="field-card">
+            <label for="peeTime">Tid</label>
+            <input id="peeTime" type="time" step="60" />
+          </div>
+          <div style="align-self: flex-end;">
+            <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost" type="button" id="closePeeSheet2">Stäng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fluidSheet" class="sheet-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet" role="document">
+      <div class="sheet-header">
+        <strong>Registrera vätska</strong>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" id="closeFluidSheet">Stäng</button>
+      </div>
+      <div class="sheet-body">
+        <form id="fluidForm">
+          <div class="row">
+            <div class="field-card">
+              <label for="fluidDate">Datum</label>
+              <input id="fluidDate" type="date" required />
+            </div>
+            <div class="field-card">
+              <label for="fluidTime">Tid</label>
+              <input id="fluidTime" type="time" step="60" required />
+            </div>
+          </div>
+          <div class="row">
+            <div class="field-card">
+              <label for="fluidVol">Volym (ml)</label>
+              <input id="fluidVol" type="number" min="1" max="5000" step="1" required placeholder="t.ex. 300" />
+            </div>
+            <div class="field-card">
+              <label for="fluidType">Dryck (valfritt)</label>
+              <input id="fluidType" type="text" placeholder="t.ex. vatten" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <div class="help">Dagligt mål: <span id="goalMl">2000</span> ml</div>
+            <div class="spacer"></div>
+          </div>
+          <div class="sheet-actions">
+            <button class="btn ghost" type="button" id="closeFluidSheet2">Stäng</button>
+            <button class="btn ok" type="submit">Lägg till</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickSheet" class="sheet-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet" role="document">
+      <div class="sheet-header">
+        <strong>Snabblogga</strong>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" id="closeQuickSheet">Stäng</button>
+      </div>
+      <div class="sheet-body">
+        <div class="grid">
+          <button class="btn ok" type="button" id="quickPain">+ Smärta</button>
+          <button class="btn secondary" type="button" id="quickPee">+ Kiss nu</button>
+          <button class="btn" type="button" id="quickFluid">+ Vätska</button>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn ghost" type="button" id="closeQuickSheet2">Stäng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="snackbar" class="snackbar" role="status" aria-live="polite">
     <span id="snackText"></span>
     <button id="snackUndo" class="btn ghost">Ångra</button>
@@ -559,11 +722,22 @@
 
   <div id="chartTooltip" class="tooltip" role="tooltip"></div>
 
+  <!-- Floating actions & bottom bar -->
+  <button class="fab" id="fabQuick" aria-label="Snabblogga">+</button>
+  <nav class="bottom-bar" role="navigation" aria-label="Snabbnavigering">
+    <div class="bottom-bar-inner">
+      <button id="navHome" class="bar-btn active" type="button" aria-label="Hem">🏠 Hem</button>
+      <button id="navLog" class="bar-btn" type="button" aria-label="Logga">✚ Logga</button>
+      <button id="navStats" class="bar-btn" type="button" aria-label="Statistik">📊 Statistik</button>
+      <button id="navSettings" class="bar-btn" type="button" aria-label="Inställningar">⚙️ Inställn.</button>
+    </div>
+  </nav>
+
   <script>
     'use strict';
 
     /* ======= Feature flaggar ======= */
-    const DEV_ENABLE_DEMO = false; // Sätt true för att aktivera "Skapa exempeldata" i Inställningar
+    const DEV_ENABLE_DEMO = true; // Sätt true för att aktivera "Skapa exempeldata" i Inställningar
 
     /* ======= Namnrymder ======= */
     const App = (() => {
@@ -1526,6 +1700,8 @@
           const lvl = parseInt(els.painLevel.value,10);
           const txt = State.settings['smärtskala'][lvl] || '(Ange beskrivning i Inställningar)';
           els.painScaleText.textContent = `${lvl}/10: ${txt || ''}`.trim();
+          const badge = document.getElementById('painLevelBadge');
+          if (badge) { badge.textContent = String(lvl); badge.style.background = Utils.levelColor(lvl); }
         }
 
         function onPainFormChange() {
@@ -2135,6 +2311,84 @@
         navigator.serviceWorker.register('sw.js');
       });
     }
+
+    // Ny navigering, sheets och quick-actions (utan att röra datalager/ritlogik)
+    (function setupNewUI(){
+      const qs = (id) => document.getElementById(id);
+      const dash = qs('dashboard');
+      const tabIds = ['smarta','kiss','vatska','stat'];
+      function hideAllTabs(){
+        for (const t of tabIds) {
+          const sec = qs('tab-' + t); if (sec) sec.hidden = true;
+          const b = qs('tabbtn-' + t); if (b) { b.classList.remove('tab-active'); b.setAttribute('aria-selected','false'); }
+        }
+      }
+      function setBarActive(id){
+        ['navHome','navLog','navStats','navSettings'].forEach(x=>{ const el=qs(x); if (el) el.classList.toggle('active', x===id); });
+      }
+      function showDashboard(){ dash.hidden = false; hideAllTabs(); setBarActive('navHome'); }
+      function openTab(name){ dash.hidden = true; const btn = qs('tabbtn-'+name); if (btn) btn.click(); setBarActive(name==='stat' ? 'navStats' : null); }
+
+      // Kortnavigering
+      const map = { cardPain: 'smarta', cardPee: 'kiss', cardFluid: 'vatska', cardStats: 'stat' };
+      for (const [cid, tab] of Object.entries(map)) {
+        const el = qs(cid); if (!el) continue;
+        el.addEventListener('click', ()=> openTab(tab));
+        el.addEventListener('keydown', (e)=>{ if (e.key==='Enter' || e.key===' ') { e.preventDefault(); openTab(tab); } });
+      }
+
+      // Bottom-bar
+      qs('navHome')?.addEventListener('click', showDashboard);
+      const openQuick = ()=>{ openSheet('quickSheet'); setBarActive('navLog'); };
+      qs('navLog')?.addEventListener('click', openQuick);
+      qs('navStats')?.addEventListener('click', ()=> openTab('stat'));
+      qs('navSettings')?.addEventListener('click', ()=> qs('btnSettings')?.click());
+      qs('fabQuick')?.addEventListener('click', openQuick);
+
+      // Quick actions
+      qs('quickPain')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); openSheet('painSheet'); });
+      qs('quickPee')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); qs('btnPeeNow')?.click(); });
+      qs('quickFluid')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); openSheet('fluidSheet'); });
+
+      // Öppnare för respektive blad
+      qs('openPainSheet')?.addEventListener('click', ()=> openSheet('painSheet'));
+      qs('openPeeSheet')?.addEventListener('click', ()=> openSheet('peeSheet'));
+      qs('openFluidSheet')?.addEventListener('click', ()=> openSheet('fluidSheet'));
+      qs('peeQuickNow')?.addEventListener('click', ()=> qs('btnPeeNow')?.click());
+
+      // Sheet helpers
+      function openSheet(id) {
+        const backdrop = qs(id); if (!backdrop) return;
+        backdrop.classList.add('open');
+        backdrop.setAttribute('aria-hidden','false');
+        const panel = backdrop.querySelector('.sheet'); panel?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeSheet(id) {
+        const backdrop = qs(id); if (!backdrop) return;
+        backdrop.classList.remove('open');
+        backdrop.setAttribute('aria-hidden','true');
+        const panel = backdrop.querySelector('.sheet'); panel?.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      // Stängknappar
+      [
+        ['painSheet','closePainSheet'],['painSheet','closePainSheet2'],
+        ['peeSheet','closePeeSheet'],['peeSheet','closePeeSheet2'],
+        ['fluidSheet','closeFluidSheet'],['fluidSheet','closeFluidSheet2'],
+        ['quickSheet','closeQuickSheet'],['quickSheet','closeQuickSheet2']
+      ].forEach(([sid,cid])=>{ const b=qs(cid); if (b) b.addEventListener('click', ()=> closeSheet(sid)); });
+      // Klick på backdrop
+      ['painSheet','peeSheet','fluidSheet','quickSheet'].forEach(id=>{ const el=qs(id); if(!el) return; el.addEventListener('click',(e)=>{ if(e.target===el) closeSheet(id); }); });
+
+      // Spegla mål till hjälpkort
+      function mirrorGoal(){ const gm=qs('goalMirror'); const src=qs('goalMl'); if (gm && src) gm.textContent = src.textContent || src.value || '2000'; }
+      mirrorGoal();
+      const goalSrc = qs('goalMl'); if (goalSrc) { const mo = new MutationObserver(mirrorGoal); mo.observe(goalSrc, { characterData: true, childList: true, subtree: true }); }
+
+      // Visa Start som default
+      showDashboard();
+    })();
   </script>
 </body>
 </html>
