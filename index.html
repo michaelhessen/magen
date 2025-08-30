@@ -985,15 +985,15 @@
           return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
         }
         function levelColor(level) {
-          // 1..10 -> färgskala från rosa via lila till blå
+          // 1..10 -> färgskala från blå via lila till rosa
           level = clamp(level, 1, 10);
           let hueDeg;
           if (level <= 5) {
-            hueDeg = 330 - (level - 1) * 15; // 330 -> 270
+            hueDeg = 210 + (level - 1) * 15; // 210 -> 270
           } else {
-            hueDeg = 270 - (level - 5) * 12; // 270 -> 210
+            hueDeg = 270 + (level - 5) * 12; // 270 -> 330
           }
-          const [r,g,b] = hsvToRgb(hueDeg / 360, 1, 0.9);
+          const [r,g,b] = hsvToRgb(hueDeg / 360, 0.55, 0.85);
           return `rgb(${r},${g},${b})`;
         }
         function escCsv(s) {
