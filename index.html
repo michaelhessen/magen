@@ -154,7 +154,7 @@
     .btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-    main { max-width: 1000px; margin: 10px auto 96px; padding: 0 16px; }
+    main { max-width: 1000px; margin: 10px auto 120px; padding: 0 16px; }
 
     .tabs { display: none !important; }
     .tabs .tablist { display: none; }
@@ -246,14 +246,22 @@
 
     /* Bottom action bar */
     .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card); box-shadow: 0 -6px 24px rgba(15,23,42,0.12); border-top: 1px solid rgba(100,116,139,0.2); }
-    .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 8px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .bar-btn { appearance: none; background: transparent; border: 1px solid rgba(100,116,139,0.2); color: var(--text); border-radius: 999px; padding: 10px 8px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .bar-btn { appearance: none; background: transparent; border: 1px solid rgba(100,116,139,0.2); color: var(--text); border-radius: 999px; padding: 14px 10px; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .bar-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
     .bar-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
     /* Floating action button */
-    .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 64px; z-index: 45; background: var(--primary); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: var(--shadow-lg); cursor: pointer; }
+    .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 88px; z-index: 45; background: var(--primary); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: var(--shadow-lg); cursor: pointer; }
     .fab:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+    @media (max-width: 400px) {
+      .appbar-inner { padding: 8px 12px; }
+      main { padding: 0 12px; }
+      .card { padding: 12px; }
+      .home-card { padding: 14px; }
+      .bottom-bar-inner { padding: 12px 12px; }
+    }
 
     /* Bottom sheets */
     .sheet-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.5); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
