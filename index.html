@@ -578,6 +578,9 @@
               <label for="painStart">Starttid</label>
               <input id="painStart" type="time" step="60" required />
             </div>
+            <div style="align-self: flex-end;">
+              <button id="btnPainNow" class="btn secondary" type="button">Nu</button>
+            </div>
             <div class="field-card">
               <label for="painEnd">Sluttid (valfritt)</label>
               <input id="painEnd" type="time" step="60" />
@@ -665,6 +668,9 @@
             <input id="peeTime" type="time" step="60" />
           </div>
           <div style="align-self: flex-end;">
+            <button id="btnPeeSetNow" class="btn secondary" type="button">Nu</button>
+          </div>
+          <div style="align-self: flex-end;">
             <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
           </div>
         </div>
@@ -692,6 +698,9 @@
             <div class="field-card">
               <label for="fluidTime">Tid</label>
               <input id="fluidTime" type="time" step="60" required />
+            </div>
+            <div style="align-self: flex-end;">
+              <button id="btnFluidNow" class="btn secondary" type="button">Nu</button>
             </div>
           </div>
           <div class="row">
@@ -1611,6 +1620,7 @@
           els.painDate = document.getElementById('painDate');
           els.painStart = document.getElementById('painStart');
           els.painEnd = document.getElementById('painEnd');
+          els.btnPainNow = document.getElementById('btnPainNow');
           els.painLevel = document.getElementById('painLevel');
           els.painScaleText = document.getElementById('painScaleText');
           els.painForm = document.getElementById('painForm');
@@ -1640,6 +1650,7 @@
           // pee
           els.btnPeeNow = document.getElementById('btnPeeNow');
           els.btnPeeAdd = document.getElementById('btnPeeAdd');
+          els.btnPeeSetNow = document.getElementById('btnPeeSetNow');
           els.peeDate = document.getElementById('peeDate');
           els.peeTime = document.getElementById('peeTime');
           els.peeList = document.getElementById('peeList');
@@ -1649,6 +1660,7 @@
           els.fluidForm = document.getElementById('fluidForm');
           els.fluidDate = document.getElementById('fluidDate');
           els.fluidTime = document.getElementById('fluidTime');
+          els.btnFluidNow = document.getElementById('btnFluidNow');
           els.fluidVol = document.getElementById('fluidVol');
           els.fluidType = document.getElementById('fluidType');
           els.goalMl = document.getElementById('goalMl');
@@ -1677,6 +1689,7 @@
           els.painForm.addEventListener('change', onPainFormChange);
           els.painForm.addEventListener('input', onPainFormChange);
           els.painForm.addEventListener('submit', onPainSubmit);
+          if (els.btnPainNow) els.btnPainNow.addEventListener('click', ()=>{ setNow(els.painDate, els.painStart); delete els.painDate.dataset.dirty; delete els.painStart.dataset.dirty; });
           // filters
           els.painFilters.btnApply.addEventListener('click', applyFilters);
           els.painFilters.btnClr.addEventListener('click', resetFilters);
@@ -1691,15 +1704,26 @@
           // pee
           els.btnPeeNow.addEventListener('click', addPeeNow);
           els.btnPeeAdd.addEventListener('click', addPeeCustom);
+          if (els.btnPeeSetNow) els.btnPeeSetNow.addEventListener('click', ()=>{ setNow(els.peeDate, els.peeTime); delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty; });
           // fluid
           els.fluidForm.addEventListener('submit', onFluidSubmit);
+          if (els.btnFluidNow) els.btnFluidNow.addEventListener('click', ()=>{ setNow(els.fluidDate, els.fluidTime); delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty; });
           // modal close
           els.modalClose.addEventListener('click', closeModal);
           els.modalBackdrop.addEventListener('click', (e)=>{ if (e.target===els.modalBackdrop) closeModal(); });
           // snackbar undo
           els.snackUndo.addEventListener('click', undoDelete);
+          function markDirtyPair(d,t){ d.dataset.dirty='1'; t.dataset.dirty='1'; }
+          [els.painDate, els.painStart].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.painDate, els.painStart)));
+          [els.peeDate, els.peeTime].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.peeDate, els.peeTime)));
+          [els.fluidDate, els.fluidTime].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.fluidDate, els.fluidTime)));
           // resize charts
           window.addEventListener('resize', Charts.onResize);
+          window.addEventListener('focus', ()=> {
+            if (!els.painDate.dataset.dirty && !els.painStart.dataset.dirty) setNow(els.painDate, els.painStart);
+            if (!els.peeDate.dataset.dirty && !els.peeTime.dataset.dirty) setNow(els.peeDate, els.peeTime);
+            if (!els.fluidDate.dataset.dirty && !els.fluidTime.dataset.dirty) setNow(els.fluidDate, els.fluidTime);
+          });
         }
 
         function initTheme() {
@@ -1713,12 +1737,12 @@
 
         function initDefaults() {
           // sätt dagens datum/tid
-          const now = new Date(); now.setSeconds(0,0);
-          const d = Utils.toLocalISO(now);
-          const { datum, tid } = Utils.splitISO(d);
-          els.painDate.value = datum; els.painStart.value = tid; els.painEnd.value = '';
-          els.fluidDate.value = datum; els.fluidTime.value = tid; els.goalMl.textContent = String(State.settings.vatska_mal_ml);
-          els.peeDate.value = datum; els.peeTime.value = tid;
+          setNow(els.painDate, els.painStart); els.painEnd.value = '';
+          setNow(els.fluidDate, els.fluidTime); els.goalMl.textContent = String(State.settings.vatska_mal_ml);
+          setNow(els.peeDate, els.peeTime);
+          delete els.painDate.dataset.dirty; delete els.painStart.dataset.dirty;
+          delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty;
+          delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty;
           updateScaleText();
           updateMedsUI();
 
@@ -1808,6 +1832,8 @@
           if (els.painEnd) els.painEnd.value='';
           for (const c of els.medsChecks) c.checked=false; for (const r of els.medEffRadios) { r.checked=false; r.disabled=true; }
           els.effektMin.value=''; els.effektMin.disabled=true;
+          setNow(els.painDate, els.painStart);
+          delete els.painDate.dataset.dirty; delete els.painStart.dataset.dirty;
           renderPainList(); Charts.rebuildAll();
           closeSheet('painSheet');
         }
@@ -2049,12 +2075,16 @@
           const iso = Utils.toLocalISO(now);
           State.pee.unshift({ id: Utils.newUUID(), timestamp: iso });
           Storage.saveAll(State); renderPeeList(); Charts.rebuildAll(); announce('Kiss sparad.'); showToast('Kiss registrerat');
+          setNow(els.peeDate, els.peeTime);
+          delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty;
         }
         function addPeeCustom() {
           const d = els.peeDate.value; const t = els.peeTime.value; if (!d || !t) { announce('Välj datum och tid.'); return; }
           const iso = Utils.toLocalISO(Utils.fromDateTimeStrings(d,t));
           State.pee.unshift({ id: Utils.newUUID(), timestamp: iso });
           Storage.saveAll(State); renderPeeList(); Charts.rebuildAll(); announce('Kiss sparad.'); showToast('Kiss registrerat');
+          setNow(els.peeDate, els.peeTime);
+          delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty;
         }
         function renderPeeList() {
           const list = els.peeList; list.innerHTML = '';
@@ -2093,7 +2123,9 @@
           const dryck = els.fluidType.value.trim();
           State.fluid.unshift({ id: Utils.newUUID(), timestamp: iso, volym_ml: vol, dryck });
           Storage.saveAll(State); renderFluidList(); Charts.rebuildAll(); announce('Vätska tillagd.'); showToast('Vätska registrerad');
-          e.target.reset(); els.fluidDate.value = d; els.fluidTime.value = t; // behåll tid/datum
+          e.target.reset();
+          setNow(els.fluidDate, els.fluidTime);
+          delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty;
         }
         function renderFluidList() {
           const list = els.fluidList; list.innerHTML='';
@@ -2409,6 +2441,13 @@
             btn.setAttribute('aria-selected', active? 'true':'false');
             els.tabs[k].hidden = !active;
           }
+          if (name==='smarta') {
+            if (!els.painDate.dataset.dirty && !els.painStart.dataset.dirty) setNow(els.painDate, els.painStart);
+          } else if (name==='kiss') {
+            if (!els.peeDate.dataset.dirty && !els.peeTime.dataset.dirty) setNow(els.peeDate, els.peeTime);
+          } else if (name==='vatska') {
+            if (!els.fluidDate.dataset.dirty && !els.fluidTime.dataset.dirty) setNow(els.fluidDate, els.fluidTime);
+          }
           // Vänta till layout uppdaterats innan vi ritar, särskilt när en sektion byter hidden
           if (typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(()=> Charts.rebuildAll());
@@ -2458,6 +2497,12 @@
       });
     }
 
+    function setNow(dateEl, timeEl){ const d=new Date(); d.setSeconds(0,0);
+      const pad=n=>String(n).padStart(2,'0');
+      const yyyy=d.getFullYear(), mm=pad(d.getMonth()+1), dd=pad(d.getDate());
+      const hh=pad(d.getHours()), mi=pad(d.getMinutes());
+      dateEl.value=`${yyyy}-${mm}-${dd}`; timeEl.value=`${hh}:${mi}`; }
+
     // Ny navigering, sheets och quick-actions (utan att röra datalager/ritlogik)
     (function setupNewUI(){
       const qs = (id) => document.getElementById(id);
@@ -2492,14 +2537,14 @@
       qs('fabQuick')?.addEventListener('click', openQuick);
 
       // Quick actions
-      qs('quickPain')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); openSheet('painSheet'); });
+      qs('quickPain')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
       qs('quickPee')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); qs('btnPeeNow')?.click(); });
-      qs('quickFluid')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); openSheet('fluidSheet'); });
+      qs('quickFluid')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
 
       // Öppnare för respektive blad
-      qs('openPainSheet')?.addEventListener('click', ()=> openSheet('painSheet'));
-      qs('openPeeSheet')?.addEventListener('click', ()=> openSheet('peeSheet'));
-      qs('openFluidSheet')?.addEventListener('click', ()=> openSheet('fluidSheet'));
+      qs('openPainSheet')?.addEventListener('click', ()=>{ const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
+      qs('openPeeSheet')?.addEventListener('click', ()=>{ const d=qs('peeDate'), t=qs('peeTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('peeSheet'); });
+      qs('openFluidSheet')?.addEventListener('click', ()=>{ const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
       qs('peeQuickNow')?.addEventListener('click', ()=> qs('btnPeeNow')?.click());
 
       // Sheet helpers
