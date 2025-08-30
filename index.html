@@ -87,6 +87,10 @@
       --chip-selected-fg: #ffffff;
       --duration-fast: 120ms;
       --duration: 180ms;
+      --s1: 12px;
+      --s2: 16px;
+      --s3: 24px;
+      --rad: 16px;
     }
     [data-theme="dark"] {
       /* Mörkt läge */
@@ -155,6 +159,8 @@
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
     main { max-width: 1000px; margin: 10px auto 120px; padding: 0 16px; }
+    .page { max-width: 480px; margin: 0 auto; padding: 0 var(--s2); }
+    .section { width: 100%; padding: var(--s2); border-radius: var(--rad); }
 
     .tabs { display: none !important; }
     .tabs .tablist { display: none; }
@@ -304,7 +310,7 @@
     </div>
   </header>
 
-  <main>
+  <main class="page">
     <p id="privacyBanner" class="banner" role="status" aria-live="polite" hidden>
       Dina uppgifter sparas endast lokalt i denna webbapp.
     </p>
@@ -563,7 +569,7 @@
         <div class="spacer"></div>
         <button class="btn ghost" type="button" id="closePainSheet">Stäng</button>
       </div>
-      <div class="sheet-body">
+      <main class="sheet-body page">
         <form id="painForm" autocomplete="off">
           <div class="row">
             <div class="field-card">
@@ -635,7 +641,7 @@
             <button class="btn ok" type="submit" title="Lägg till smärtlogg">Lägg till</button>
           </div>
         </form>
-      </div>
+      </main>
     </div>
   </div>
 
