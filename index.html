@@ -752,7 +752,8 @@
     </div>
   </nav>
 
-  <script>
+  <script type="module">
+    import { scaleForType, labelFor } from './scale.js';
     'use strict';
 
     /* ======= Feature flaggar ======= */
@@ -846,7 +847,7 @@
           };
           // tema initialt från prefers-color-scheme
           const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          return { tema: prefersDark ? 'dark' : 'light', ['smärtskala']: scale, vatska_mal_ml: 2000 };
+          return { tema: prefersDark ? 'dark' : 'light', ['smärtskala']: scale, vatska_mal_ml: 2000, ['smärtskala_magont']: null, ['smärtskala_livmoder']: null };
         }
 
         async function migrateIfNeeded() {
@@ -860,6 +861,8 @@
           } else {
             const settings = await get(KEYS.settings) || defaultSettings();
             if (!settings['smärtskala']) settings['smärtskala'] = defaultSettings()['smärtskala'];
+            if (!('smärtskala_magont' in settings)) settings['smärtskala_magont'] = null;
+            if (!('smärtskala_livmoder' in settings)) settings['smärtskala_livmoder'] = null;
             if (typeof settings.vatska_mal_ml !== 'number') settings.vatska_mal_ml = 2000;
             if (!settings.tema) settings.tema = defaultSettings().tema;
             await set(KEYS.settings, settings);
@@ -1061,6 +1064,10 @@
           return lines.join('\n') + '\n';
         }
 
+        function exportSettings(obj) {
+          return JSON.stringify(obj);
+        }
+
         function detectDelimiter(headerLine) {
           const comma = (headerLine.match(/,/g)||[]).length;
           const semi = (headerLine.match(/;/g)||[]).length;
@@ -1190,7 +1197,11 @@
           return res;
         }
 
-        return { download, exportPain, exportPee, exportFluid, importPain, importPee, importFluid, HEADERS };
+        function importSettings(text) {
+          return JSON.parse(text);
+        }
+
+        return { download, exportPain, exportPee, exportFluid, exportSettings, importPain, importPee, importFluid, importSettings, HEADERS };
 
       })();
 
@@ -1724,7 +1735,8 @@
 
         function updateScaleText() {
           const lvl = parseInt(els.painLevel.value,10);
-          const txt = State.settings['smärtskala'][lvl] || '(Ange beskrivning i Inställningar)';
+          const typ = getSelectedPainType();
+          const txt = labelFor(State.settings, typ, lvl) || '(Ange beskrivning i Inställningar)';
           els.painScaleText.textContent = `${lvl}/10: ${txt || ''}`.trim();
           const badge = document.getElementById('painLevelBadge');
           if (badge) { badge.textContent = String(lvl); badge.style.background = Utils.levelColor(lvl); }
@@ -1925,7 +1937,7 @@
               <div style="margin-top:6px;">
                 <label>Nivå (1–10)</label>
                 <input id="epNiva" type="range" min="1" max="10" value="${p.niva}">
-                <div class="scale-note">${p.niva}/10: ${State.settings['smärtskala'][p.niva]||''}</div>
+                <div class="scale-note">${p.niva}/10: ${labelFor(State.settings, p.typ, p.niva)||''}</div>
               </div>
               <div class="section-title">Smärtlindring</div>
               <div class="row">
@@ -1949,6 +1961,16 @@
             </form>
           `;
           openModal(html);
+          const scaleNote = document.querySelector('.scale-note');
+          function upd(){
+            const lvl = parseInt(document.getElementById('epNiva').value,10);
+            const t = (document.querySelector('input[name="epTyp"]:checked')||{}).value || 'magont';
+            scaleNote.textContent = `${lvl}/10: ${labelFor(State.settings, t, lvl)}`;
+          }
+          document.getElementById('epNiva').addEventListener('input', upd);
+          document.querySelectorAll('input[name="epTyp"]').forEach(r=>r.addEventListener('change', upd));
+          document.getElementById('epNiva').addEventListener('change', upd);
+          upd();
           document.getElementById('editPainForm').addEventListener('submit', (e)=>{
             e.preventDefault();
             const id = e.target.getAttribute('data-id');
@@ -2108,11 +2130,12 @@
                 <button class="btn" id="exPain">Exportera smärta</button>
                 <button class="btn" id="exPee">Exportera kiss</button>
                 <button class="btn" id="exFluid">Exportera vätska</button>
+                <button class="btn" id="exSettings">Exportera inställningar</button>
               </div>
               <div class="row">
-                <button class="btn secondary" id="exAll">Exportera alla (3 filer)</button>
+                <button class="btn secondary" id="exAll">Exportera alla (4 filer)</button>
               </div>
-              <div class="help">Format: UTF‑8, radslut \n, separator komma. Fält med citattecken escap:as.</div>
+              <div class="help">Smärta/Kiss/Vätska: CSV med komma. Inställningar: JSON.</div>
             </div>`;
           openModal(html);
           document.getElementById('exPain').addEventListener('click', ()=>{
@@ -2120,10 +2143,12 @@
           });
           document.getElementById('exPee').addEventListener('click', ()=>{ CSV.download('kiss.csv', CSV.exportPee(State.pee)); });
           document.getElementById('exFluid').addEventListener('click', ()=>{ CSV.download('vatska.csv', CSV.exportFluid(State.fluid)); });
+          document.getElementById('exSettings').addEventListener('click', ()=>{ CSV.download('settings.json', CSV.exportSettings(State.settings)); });
           document.getElementById('exAll').addEventListener('click', ()=>{
             CSV.download('smarta.csv', CSV.exportPain(State.pain));
             CSV.download('kiss.csv', CSV.exportPee(State.pee));
             CSV.download('vatska.csv', CSV.exportFluid(State.fluid));
+            CSV.download('settings.json', CSV.exportSettings(State.settings));
           });
         }
 
@@ -2142,6 +2167,10 @@
               <div class="card" style="background:transparent;box-shadow:none;border:1px dashed rgba(100,116,139,0.3)">
                 <div class="section-title">Vätska</div>
                 <input type="file" id="impFluid" accept=".csv,text/csv" />
+              </div>
+              <div class="card" style="background:transparent;box-shadow:none;border:1px dashed rgba(100,116,139,0.3)">
+                <div class="section-title">Inställningar</div>
+                <input type="file" id="impSettings" accept=".json,application/json" />
               </div>
               <div class="help">Tillåtna separatorer: komma eller semikolon. För smärta ska rubriker vara: id,datetimeISO,datum,tid,typ,niva,meds,med_effekt,med_effekt_minuter,anteckning,starttid,sluttid</div>
               <div id="importLog" class="muted"></div>
@@ -2174,11 +2203,17 @@
             try { const text = await readFile(e.target); if (!text) return; const rows = CSV.importFluid(text); for (const r of rows) State.fluid.push(r); Storage.saveAll(State); renderFluidList(); Charts.rebuildAll(); announce(`Importerade ${rows.length} vätskeposter.`); appendLog(`Vätska: ${rows.length} rader importerade.`); }
             catch(err){ appendLog(`<span style='color:var(--danger)'>Vätska: ${err.message}</span>`);} e.target.value='';
           });
+          document.getElementById('impSettings').addEventListener('change', async (e)=>{
+            try { const text = await readFile(e.target); if (!text) return; const obj = CSV.importSettings(text); State.settings = obj; Storage.saveAll(State); applyTheme(State.settings.tema); renderAll(); Charts.rebuildAll(); announce('Inställningar importerade.'); appendLog('Inställningar: importerade.'); }
+            catch(err){ appendLog(`<span style='color:var(--danger)'>Inställningar: ${err.message}</span>`);} e.target.value='';
+          });
         }
 
         function openSettingsModal() {
           const theme = State.settings.tema;
           const scale = State.settings['smärtskala'];
+          const mag = State.settings['smärtskala_magont'];
+          const liv = State.settings['smärtskala_livmoder'];
           const goal = State.settings.vatska_mal_ml || 2000;
           const demoBtn = DEV_ENABLE_DEMO ? `<button class='btn warn' id='btnDemo'>Skapa exempeldata</button>` : `<button class='btn warn' id='btnDemo' disabled title='Inaktiverat i produktion'>Skapa exempeldata</button>`;
           const html = `
@@ -2204,15 +2239,39 @@
                 </div>
               </div>
               <div class="card">
-                <div class="section-title">Smärtskala (1–10)</div>
+                <div class="section-title">Global standard</div>
                 <div class="grid">
                   ${Array.from({length:10}, (_,i)=>{
                     const lvl = i+1; const val = (scale && scale[lvl]) || '';
                     return `<div><label for='s${lvl}'>${lvl}/10</label><input id='s${lvl}' type='text' value="${(val||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"></div>`;
                   }).join('')}
                 </div>
+                <div class="section-title" style="margin-top:10px;">Magont – egen skala</div>
+                <label><input type="checkbox" id="magSwitch" ${mag?'checked':''}> Använd egen skala</label>
+                <div id="magFields" class="grid">
+                  ${Array.from({length:10},(_,i)=>{
+                    const lvl=i+1; const val = (mag?mag[lvl]:scale[lvl])||'';
+                    const dis = mag?'':' disabled';
+                    return `<div><label for='m${lvl}'>${lvl}/10</label><input id='m${lvl}' type='text' value="${(val||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"${dis}></div>`;
+                  }).join('')}
+                </div>
+                <div class="row" style="margin-top:6px;">
+                  <button class="btn secondary" id="resetMag">Återställ till global</button>
+                </div>
+                <div class="section-title" style="margin-top:10px;">Livmoder‑ont – egen skala</div>
+                <label><input type="checkbox" id="livSwitch" ${liv?'checked':''}> Använd egen skala</label>
+                <div id="livFields" class="grid">
+                  ${Array.from({length:10},(_,i)=>{
+                    const lvl=i+1; const val = (liv?liv[lvl]:scale[lvl])||'';
+                    const dis = liv?'':' disabled';
+                    return `<div><label for='l${lvl}'>${lvl}/10</label><input id='l${lvl}' type='text' value="${(val||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"${dis}></div>`;
+                  }).join('')}
+                </div>
+                <div class="row" style="margin-top:6px;">
+                  <button class="btn secondary" id="resetLiv">Återställ till global</button>
+                </div>
                 <div class="row" style="margin-top:10px;">
-                  <button class="btn secondary" id="btnSaveScale">Spara skala</button>
+                  <button class="btn secondary" id="btnSaveScale">Spara skalor</button>
                 </div>
               </div>
             </div>`;
@@ -2223,10 +2282,49 @@
             State.settings.tema = sel; State.settings.vatska_mal_ml = Utils.clamp(g, 500, 6000);
             applyTheme(sel); Storage.saveAll(State); renderAll(); Charts.rebuildAll(); announce('Inställningar sparade.');
           });
+          const magSwitch = document.getElementById('magSwitch');
+          const magInputs = Array.from({length:10},(_,i)=>document.getElementById('m'+(i+1)));
+          const livSwitch = document.getElementById('livSwitch');
+          const livInputs = Array.from({length:10},(_,i)=>document.getElementById('l'+(i+1)));
+          function sync(){
+            magInputs.forEach(el=>el.disabled=!magSwitch.checked);
+            livInputs.forEach(el=>el.disabled=!livSwitch.checked);
+          }
+          magSwitch.addEventListener('change', ()=>{
+            if (magSwitch.checked && !State.settings['smärtskala_magont']) {
+              for (let i=1;i<=10;i++) document.getElementById('m'+i).value = document.getElementById('s'+i).value;
+            }
+            sync();
+          });
+          livSwitch.addEventListener('change', ()=>{
+            if (livSwitch.checked && !State.settings['smärtskala_livmoder']) {
+              for (let i=1;i<=10;i++) document.getElementById('l'+i).value = document.getElementById('s'+i).value;
+            }
+            sync();
+          });
+          document.getElementById('resetMag').addEventListener('click', ()=>{
+            magSwitch.checked=false; sync();
+            for (let i=1;i<=10;i++) document.getElementById('m'+i).value = document.getElementById('s'+i).value;
+            delete State.settings['smärtskala_magont']; Storage.saveAll(State); announce('Magont-skala återställd.');
+          });
+          document.getElementById('resetLiv').addEventListener('click', ()=>{
+            livSwitch.checked=false; sync();
+            for (let i=1;i<=10;i++) document.getElementById('l'+i).value = document.getElementById('s'+i).value;
+            delete State.settings['smärtskala_livmoder']; Storage.saveAll(State); announce('Livmoder-skala återställd.');
+          });
+          sync();
           document.getElementById('btnSaveScale').addEventListener('click', ()=>{
-            const obj = {};
-            for (let i=1;i<=10;i++) obj[i] = document.getElementById('s'+i).value.trim();
-            State.settings['smärtskala'] = obj; Storage.saveAll(State); updateScaleText(); announce('Smärtskala sparad.');
+            const obj = {}; for (let i=1;i<=10;i++) obj[i] = document.getElementById('s'+i).value.trim();
+            State.settings['smärtskala'] = obj;
+            if (magSwitch.checked) {
+              const mo = {}; for (let i=1;i<=10;i++) mo[i] = document.getElementById('m'+i).value.trim();
+              State.settings['smärtskala_magont'] = mo;
+            } else { delete State.settings['smärtskala_magont']; }
+            if (livSwitch.checked) {
+              const lo = {}; for (let i=1;i<=10;i++) lo[i] = document.getElementById('l'+i).value.trim();
+              State.settings['smärtskala_livmoder'] = lo;
+            } else { delete State.settings['smärtskala_livmoder']; }
+            Storage.saveAll(State); updateScaleText(); announce('Smärtskalor sparade.');
           });
           if (DEV_ENABLE_DEMO) {
             document.getElementById('btnDemo').addEventListener('click', ()=>{ createDemoData(); closeModal(); });
