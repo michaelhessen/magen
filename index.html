@@ -302,10 +302,7 @@
       <div class="title" aria-label="Appnamn">Magen</div>
       <div class="spacer"></div>
       <div class="toolbar" role="toolbar" aria-label="Verktyg">
-        <button id="btnExport" class="btn secondary" title="Exportera CSV" aria-label="Exportera CSV">Exportera</button>
-        <button id="btnImport" class="btn secondary" title="Importera CSV" aria-label="Importera CSV">Importera</button>
-        <button id="btnSettings" class="btn ghost" title="Inställningar" aria-label="Öppna inställningar">Inställningar</button>
-        <button id="btnClear" class="btn danger" title="Rensa all data" aria-label="Rensa all data">Rensa data</button>
+        <button id="btnSettings" class="btn ghost" title="Inställningar" aria-label="Öppna inställningar">⚙️</button>
       </div>
     </div>
   </header>
@@ -1585,10 +1582,7 @@
         function cache() {
           els.appRoot = document.documentElement;
           // top bar
-          els.btnExport = document.getElementById('btnExport');
-          els.btnImport = document.getElementById('btnImport');
           els.btnSettings = document.getElementById('btnSettings');
-          els.btnClear = document.getElementById('btnClear');
           els.privacyBanner = document.getElementById('privacyBanner');
           els.live = document.getElementById('liveRegion');
           // tabs
@@ -1669,10 +1663,7 @@
           // tabs
           for (const [k, btn] of Object.entries(els.tabBtns)) btn.addEventListener('click', ()=>activateTab(k));
           // top actions
-          els.btnExport.addEventListener('click', openExportModal);
-          els.btnImport.addEventListener('click', openImportModal);
           els.btnSettings.addEventListener('click', openSettingsModal);
-          els.btnClear.addEventListener('click', clearAllConfirm);
           // pain form dynamic
           els.painForm.addEventListener('change', onPainFormChange);
           els.painForm.addEventListener('input', onPainFormChange);
@@ -2217,12 +2208,23 @@
                     return `<div><label for='s${lvl}'>${lvl}/10</label><input id='s${lvl}' type='text' value="${(val||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"></div>`;
                   }).join('')}
                 </div>
-                <div class="row" style="margin-top:10px;">
-                  <button class="btn secondary" id="btnSaveScale">Spara skala</button>
-                </div>
+              <div class="row" style="margin-top:10px;">
+                <button class="btn secondary" id="btnSaveScale">Spara skala</button>
               </div>
-            </div>`;
+            </div>
+            <div class="card">
+              <div class="section-title">Data</div>
+              <div class="row">
+                <button class="btn secondary" id="btnExport">Exportera</button>
+                <button class="btn secondary" id="btnImport">Importera</button>
+                <button class="btn danger" id="btnClear">Rensa data</button>
+              </div>
+            </div>
+          </div>`;
           openModal(html);
+          document.getElementById('btnExport').addEventListener('click', openExportModal);
+          document.getElementById('btnImport').addEventListener('click', openImportModal);
+          document.getElementById('btnClear').addEventListener('click', clearAllConfirm);
           document.getElementById('btnSaveSettings').addEventListener('click', ()=>{
             const sel = document.getElementById('themeSel').value;
             const g = Utils.parseNumber(document.getElementById('goalSel').value) || 2000;
