@@ -1776,6 +1776,7 @@
           for (const c of els.medsChecks) c.checked=false; for (const r of els.medEffRadios) { r.checked=false; r.disabled=true; }
           els.effektMin.value=''; els.effektMin.disabled=true;
           renderPainList(); Charts.rebuildAll();
+          closeSheet('painSheet');
         }
 
         function filteredPain() {
