@@ -143,6 +143,7 @@
     .btn {
       appearance: none; border: none; cursor: pointer; border-radius: 10px; padding: 8px 12px; font-weight: 600; color: white;
       background: var(--primary); box-shadow: var(--shadow-sm); transition: transform .08s ease, box-shadow .2s ease;
+      min-height:44px; min-width:44px;
     }
     .btn:hover { transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
@@ -193,9 +194,9 @@
     .list-day { margin-top: 12px; }
     .list-day > .day-head { font-weight: 800; color: var(--muted); margin: 6px 4px; }
 
-    .item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid rgba(100,116,139,0.2); padding: 10px; border-radius: 12px; box-shadow: var(--shadow-sm); }
+    .item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid rgba(100,116,139,0.2); padding: var(--space-2); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
     .item .meta { font-size: 12px; color: var(--muted); }
-    .item .actions { display: flex; gap: 6px; }
+    .item .actions { display: inline-flex; gap: 6px; flex-wrap: nowrap; }
 
     .level-badge {
       display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 8px; border-radius: 999px; color: white; font-weight: 800; font-size: 12px;
@@ -255,6 +256,25 @@
     .fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 88px; z-index: 45; background: var(--primary); color: #fff; border: none; border-radius: 999px; width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: var(--shadow-lg); cursor: pointer; }
     .fab:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
+    /* New responsive layout tokens and components */
+    :root{
+      --space-1:12px; --space-2:16px; --space-3:24px;
+      --radius:16px; --radius-lg:20px;
+      --tabbar-h: calc(64px + env(safe-area-inset-bottom));
+    }
+    .page{ max-width:480px; margin:0 auto; padding:0 var(--space-2); padding-bottom: calc(var(--tabbar-h) + 72px); }
+    .page-header{position:sticky;top:0;z-index:30;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:var(--space-2);box-shadow:var(--shadow-sm);}
+    .page-header h1{font-size:22px;margin:0;}
+    .tabbar{ position:fixed; left:0; right:0; bottom:0; height: var(--tabbar-h); padding-bottom: max(12px, env(safe-area-inset-bottom)); /* env() reserverar space för home-indikatorn */ display:flex; justify-content:space-around; align-items:center; backdrop-filter:saturate(180%) blur(12px); }
+    .tabbar button{ min-width:80px; min-height:44px; }
+    .fab{ position:fixed; left:50%; bottom: calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom)); /* env() så knappen hamnar ovanför home-indikatorn */ transform: translateX(-50%); width:64px; height:64px; border-radius:50%; display:grid; place-items:center; z-index:10; background: var(--primary); color:#fff; border:none; box-shadow: var(--shadow-lg); }
+    .grid-2x2{ display:grid; grid-template-columns:1fr 1fr; gap: var(--space-2); height: calc(100vh - var(--tabbar-h) - 56px - env(safe-area-inset-top)); padding: var(--space-2) 0 var(--space-3); }
+    .grid-2x2 .tile{ border-radius: var(--radius-lg); aspect-ratio:1/1; display:grid; place-items:center; text-align:center; }
+    .section{ width:100%; padding: var(--space-2); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+    .section + .section{ margin-top: var(--space-3); }
+    .button, .icon-btn{ min-height:44px; min-width:44px; }
+    .icon-btn{ background:none; border:none; cursor:pointer; }
+
     @media (max-width: 400px) {
       .appbar-inner { padding: 8px 12px; }
       main { padding: 0 12px; }
@@ -281,17 +301,9 @@
   </style>
 </head>
 <body>
-  <header class="appbar" role="banner">
-    <div class="appbar-inner" aria-label="Toppfält">
-      <div class="title" aria-label="Appnamn">Magen</div>
-      <div class="spacer"></div>
-      <div class="toolbar" role="toolbar" aria-label="Verktyg">
-        <button id="btnExport" class="btn secondary" title="Exportera CSV" aria-label="Exportera CSV">Exportera</button>
-        <button id="btnImport" class="btn secondary" title="Importera CSV" aria-label="Importera CSV">Importera</button>
-        <button id="btnSettings" class="btn ghost" title="Inställningar" aria-label="Öppna inställningar">Inställningar</button>
-        <button id="btnClear" class="btn danger" title="Rensa all data" aria-label="Rensa all data">Rensa data</button>
-      </div>
-    </div>
+  <header class="page-header">
+    <h1>Magen</h1>
+    <button id="btnSettings" class="icon-btn" aria-label="Inställningar">⚙️</button>
   </header>
 
   <main>
@@ -300,24 +312,12 @@
     </p>
 
     <!-- Start/Dashboard -->
-    <section id="dashboard" aria-label="Start">
-      <div class="home-grid">
-        <div class="home-card" id="cardPain" role="button" tabindex="0" aria-label="Öppna Smärta">
-          <div class="big">💢 Smärta</div>
-          <div class="meta">Logga tillfälle, se lista och grafik</div>
-        </div>
-        <div class="home-card" id="cardPee" role="button" tabindex="0" aria-label="Öppna Kiss">
-          <div class="big">🚻 Kiss</div>
-          <div class="meta">Snabbt "nu" eller vald tid</div>
-        </div>
-        <div class="home-card" id="cardFluid" role="button" tabindex="0" aria-label="Öppna Vätska">
-          <div class="big">💧 Vätska</div>
-          <div class="meta">Följ intag och mål</div>
-        </div>
-        <div class="home-card" id="cardStats" role="button" tabindex="0" aria-label="Öppna Statistik">
-          <div class="big">📊 Statistik</div>
-          <div class="meta">Översikt över allt</div>
-        </div>
+    <section id="dashboard" class="page" aria-label="Start">
+      <div class="grid-2x2">
+        <button class="tile" id="cardPain" data-nav="smarta"><span>💢 Smärta</span></button>
+        <button class="tile" id="cardPee" data-nav="kiss"><span>🚻 Kiss</span></button>
+        <button class="tile" id="cardFluid" data-nav="vatska"><span>💧 Vätska</span></button>
+        <button class="tile" id="cardStats" data-nav="stat"><span>📊 Statistik</span></button>
       </div>
     </section>
 
@@ -330,19 +330,18 @@
       </div>
     </nav>
 
-    <!-- Smärta -->
-    <section id="tab-smarta" role="tabpanel" aria-labelledby="tabbtn-smarta">
-      <div class="grid grid-2">
-        <div class="card" id="painFormCard">
+      <!-- Smärta -->
+      <section id="tab-smarta" class="page" role="tabpanel" aria-labelledby="tabbtn-smarta">
+        <section class="section" id="painFormCard">
           <h3>Logga smärta</h3>
           <div class="row" style="align-items:center;">
             <div class="help">Öppna bladet för att registrera ett tillfälle.</div>
             <div class="spacer"></div>
-            <button id="openPainSheet" class="btn ok" type="button" title="Öppna smärtblad">Öppna blad</button>
+            <button id="openPainSheet" class="btn ok" type="button" title="Ny logg">Ny logg</button>
           </div>
-        </div>
+        </section>
 
-        <div class="card filters">
+        <section class="section filters">
           <details>
             <summary>Filter & sök</summary>
             <form id="painFilters" style="margin-top:10px;">
@@ -402,38 +401,36 @@
                   <button class="btn" id="btnApplyFilter" type="button">Använd</button>
                 </div>
               </div>
-            </form>
-          </details>
-        </div>
-      </div>
+          </form>
+            </details>
+          </section>
 
-      <div class="grid grid-2" style="margin-top:10px;">
-        <div class="card">
-          <h3>Lista</h3>
-          <div id="painList" class="list-group" aria-live="polite"></div>
-          <div id="painEmpty" class="muted" hidden>Inget registrerat ännu. Lägg till i formuläret ovan.</div>
-        </div>
-        <div class="card">
-          <h3>Grafik</h3>
-          <div class="canvas-wrap">
-            <canvas id="painLine"></canvas>
-          </div>
-          <div class="canvas-wrap" style="margin-top:10px;">
-            <canvas id="painBars"></canvas>
-          </div>
-          <div class="canvas-wrap" style="margin-top:10px;">
-            <canvas id="painMeds"></canvas>
-          </div>
-          <div class="canvas-wrap" style="margin-top:10px;">
-            <canvas id="painBox"></canvas>          </div>          <div class="canvas-wrap" style="margin-top:10px;">
-            <canvas id="painDuration"></canvas>
-          </div>
+        
+          <section class="section">
+            <h3>Lista</h3>
+            <div id="painList" class="list-group" aria-live="polite"></div>
+            <div id="painEmpty" class="muted" hidden>Inget registrerat ännu. Lägg till i formuläret ovan.</div>
+          </section>
 
-
-
-        </div>
-      </div>
-    </section>
+          <section class="section">
+            <h3>Grafik</h3>
+            <div class="canvas-wrap">
+              <canvas id="painLine"></canvas>
+            </div>
+            <div class="canvas-wrap" style="margin-top:10px;">
+              <canvas id="painBars"></canvas>
+            </div>
+            <div class="canvas-wrap" style="margin-top:10px;">
+              <canvas id="painMeds"></canvas>
+            </div>
+            <div class="canvas-wrap" style="margin-top:10px;">
+              <canvas id="painBox"></canvas>
+            </div>
+            <div class="canvas-wrap" style="margin-top:10px;">
+              <canvas id="painDuration"></canvas>
+            </div>
+          </section>
+        </section>
 
     <!-- Kiss -->
     <section id="tab-kiss" role="tabpanel" aria-labelledby="tabbtn-kiss" hidden>
@@ -730,15 +727,13 @@
 
   <div id="chartTooltip" class="tooltip" role="tooltip"></div>
 
-  <!-- Floating actions & bottom bar -->
-  <button class="fab" id="fabQuick" aria-label="Snabblogga">+</button>
-  <nav class="bottom-bar" role="navigation" aria-label="Snabbnavigering">
-    <div class="bottom-bar-inner">
-      <button id="navHome" class="bar-btn active" type="button" aria-label="Hem">🏠 Hem</button>
-      <button id="navLog" class="bar-btn" type="button" aria-label="Logga">✚ Logga</button>
-      <button id="navStats" class="bar-btn" type="button" aria-label="Statistik">📊 Statistik</button>
-      <button id="navSettings" class="bar-btn" type="button" aria-label="Inställningar">⚙️ Inställn.</button>
-    </div>
+  <!-- Floating action button & tab bar -->
+  <button class="fab" id="fabQuick" aria-label="Ny logg">＋</button>
+  <nav class="tabbar" role="navigation" aria-label="Huvudnavigering">
+      <button id="navHome" type="button" aria-label="Hem">🏠 Hem</button>
+      <button id="navLog" type="button" aria-label="Logga">➕ Logga</button>
+      <button id="navStats" type="button" aria-label="Statistik">📈 Statistik</button>
+      <button id="navSettings" type="button" aria-label="Inställningar">⚙️ Inställn.</button>
   </nav>
 
   <script>
@@ -1562,10 +1557,7 @@
         function cache() {
           els.appRoot = document.documentElement;
           // top bar
-          els.btnExport = document.getElementById('btnExport');
-          els.btnImport = document.getElementById('btnImport');
           els.btnSettings = document.getElementById('btnSettings');
-          els.btnClear = document.getElementById('btnClear');
           els.privacyBanner = document.getElementById('privacyBanner');
           els.live = document.getElementById('liveRegion');
           // tabs
@@ -1645,10 +1637,7 @@
           // tabs
           for (const [k, btn] of Object.entries(els.tabBtns)) btn.addEventListener('click', ()=>activateTab(k));
           // top actions
-          els.btnExport.addEventListener('click', openExportModal);
-          els.btnImport.addEventListener('click', openImportModal);
           els.btnSettings.addEventListener('click', openSettingsModal);
-          els.btnClear.addEventListener('click', clearAllConfirm);
           // pain form dynamic
           els.painForm.addEventListener('change', onPainFormChange);
           els.painForm.addEventListener('input', onPainFormChange);
@@ -2182,6 +2171,13 @@
                   <button class="btn secondary" id="btnSaveScale">Spara skala</button>
                 </div>
               </div>
+              <div class="card">
+                <div class="row" style="gap:8px; flex-wrap:wrap;">
+                  <button class="btn secondary" id="btnExport2">Exportera</button>
+                  <button class="btn secondary" id="btnImport2">Importera</button>
+                  <button class="btn danger" id="btnClear2">Rensa data</button>
+                </div>
+              </div>
             </div>`;
           openModal(html);
           document.getElementById('btnSaveSettings').addEventListener('click', ()=>{
@@ -2195,6 +2191,9 @@
             for (let i=1;i<=10;i++) obj[i] = document.getElementById('s'+i).value.trim();
             State.settings['smärtskala'] = obj; Storage.saveAll(State); updateScaleText(); announce('Smärtskala sparad.');
           });
+          document.getElementById('btnExport2').addEventListener('click', openExportModal);
+          document.getElementById('btnImport2').addEventListener('click', openImportModal);
+          document.getElementById('btnClear2').addEventListener('click', clearAllConfirm);
           if (DEV_ENABLE_DEMO) {
             document.getElementById('btnDemo').addEventListener('click', ()=>{ createDemoData(); closeModal(); });
           }
