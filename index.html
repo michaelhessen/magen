@@ -164,6 +164,7 @@
     .btn.warn { background: var(--warn); color: #111827; }
     .btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .btn.chip-btn{ padding:8px 12px; border-radius:999px; font-weight:700; }
 
     main { max-width: 1000px; margin: 10px auto 120px; padding: 0 16px; }
     .page{ max-width:480px; width:100%; margin-inline:auto; padding-inline:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right)); }
@@ -197,7 +198,16 @@
     }
     textarea { min-height: 70px; resize: vertical; }
 
-    input[type="range"] { width: 100%; }
+    input[type="range"]{ width:100%; height:32px; background:transparent; }
+    input[type="range"]::-webkit-slider-runnable-track{
+      height:8px; border-radius:999px; background:rgba(100,116,139,.25);
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; width:24px; height:24px; border-radius:50%;
+      margin-top:-8px; background:var(--accent); border:2px solid rgba(255,255,255,.35);
+    }
+    input[type="range"]:focus-visible{ outline:none; }
+    #ticks10{ display:none; }
     .range-meta { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
     .scale-note { margin-top: 6px; font-size: 13px; }
 
@@ -222,7 +232,7 @@
     }
 
     .level-badge {
-      display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 8px; border-radius: 999px; color: white; font-weight: 800; font-size: 12px;
+      display: inline-flex; align-items: center; justify-content: center; min-width: 34px; padding: 4px 8px; border-radius: 999px; color: white; font-weight: 800; font-size: 12px; margin-left:8px; background:var(--accent);
     }
     .pill { padding: 2px 8px; border-radius: 999px; background: rgba(100,116,139,0.15); font-size: 12px; }
 
@@ -270,6 +280,7 @@
     .form-row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
     @media (max-width: 420px){ .form-row{ grid-template-columns:1fr; } }
     .field-card{ background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.2); padding:10px; border-radius:12px; }
+    .form-row .btn.secondary{ height:40px; align-self:end; }
 
     /* Dashboard */
     #dashboard { margin-top: 10px; }
@@ -307,8 +318,13 @@
     .sheet.open { transform: translateY(0); }
     .sheet .sheet-header { position: sticky; top: 0; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
     .sheet .sheet-body { padding: 12px 16px 80px; overflow-y: auto; overflow-x: hidden; max-height: calc(90vh - 120px); touch-action: pan-y; }
-    .sheet .sheet-actions { position: sticky; bottom: 0; background: linear-gradient(to top, var(--card), rgba(0,0,0,0)); padding: 10px 16px 16px; display: flex; gap: 10px; justify-content: flex-end; }
-    .sheet .sheet-body{ padding:16px; }
+    .sheet .sheet-actions{
+      position: sticky; bottom: 0;
+      background: linear-gradient(to top, var(--card) 60%, rgba(0,0,0,0));
+      padding: 12px 0 8px;
+      display:flex; gap:10px; justify-content:flex-end;
+    }
+    .sheet .sheet-body{ padding-bottom: 88px; } /* luft över tabbar/FAB */
     .sheet .sheet-body .page{ padding-inline:0; } /* undvik dubbel-padding i sheet */
 
     /* Focus visibility */
@@ -597,7 +613,7 @@
               <input id="painStart" type="time" step="60" required />
             </div>
             <div style="align-self: flex-end;">
-              <button id="btnPainNow" class="btn secondary" type="button">Nu</button>
+              <button id="btnPainNow" class="btn secondary chip-btn" type="button">Nu</button>
             </div>
             <div class="field-card">
               <label for="painEnd">Sluttid (valfritt)</label>
@@ -626,7 +642,7 @@
             <div id="painScaleText" class="scale-note">Beskrivning visas här…</div>
           </div>
 
-          <div id="painMedsSection" hidden>
+          <div id="painMedsSection">
             <div class="section-title">Smärtlindring</div>
             <div class="chip-group">
               <label class="chip"><input type="checkbox" value="ibuprofen" class="medsChk" /> <span>ibuprofen</span></label>
@@ -1642,7 +1658,6 @@
           els.painLevel = document.getElementById('painLevel');
           els.painScaleText = document.getElementById('painScaleText');
           els.painForm = document.getElementById('painForm');
-          els.painMedsSection = document.getElementById('painMedsSection');
           els.medsChecks = Array.from(document.querySelectorAll('.medsChk'));
           els.medEffRadios = Array.from(document.querySelectorAll('input[name="medEffekt"]'));
           els.effektMin = document.getElementById('effektMin');
@@ -1762,7 +1777,6 @@
           delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty;
           delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty;
           updateScaleText();
-          updateMedsUI();
 
           if (!State.firstRunShown) {
             els.privacyBanner.hidden = false; // visas
@@ -1782,13 +1796,10 @@
           const scale = scaleForType(typ);
           const txt = scale[lvl] || '(Ange beskrivning i Inställningar)';
           els.painScaleText.textContent = `${lvl}/10: ${txt || ''}`.trim();
-          const badge = document.getElementById('painLevelBadge');
-          if (badge) { badge.textContent = String(lvl); badge.style.background = Utils.levelColor(lvl); }
         }
 
         function onPainFormChange() {
           updateScaleText();
-          updateMedsUI();
         }
 
         function getSelectedPainType() {
@@ -1796,14 +1807,6 @@
           return val || 'magont';
         }
 
-        function updateMedsUI() {
-          // Smärtlindring tillåten för båda typer (magont och livmoder-ont)
-          const meds = els.medsChecks.filter(c=>c.checked).map(c=>c.value);
-          els.painMedsSection.hidden = false;
-          const enabled = meds.length>0;
-          for (const r of els.medEffRadios) { r.disabled = !enabled; if (!enabled) r.checked = false; }
-          els.effektMin.disabled = !enabled || !['ja','delvis'].includes((document.querySelector('input[name="medEffekt"]:checked')||{}).value);
-        }
 
         function colorForLevel(level) { return Utils.levelColor(level); }
 
@@ -2599,6 +2602,31 @@
 
       // Visa Start som default
       showDashboard();
+    })();
+  </script>
+  <script>
+    (() => {
+      const level = document.getElementById('painLevel');
+      const badge = document.getElementById('painLevelBadge');
+      if(!level || !badge) return;
+      const colorFn = (n)=> (window.Utils && Utils.levelColor) ? Utils.levelColor(n) : 'var(--accent)';
+      const sync = () => { badge.textContent = level.value; badge.style.background = colorFn(+level.value); };
+      level.addEventListener('input', sync); level.addEventListener('change', sync); sync();
+    })();
+    (() => {
+      const medsChks = Array.from(document.querySelectorAll('.medsChk'));
+      const effRadios = Array.from(document.querySelectorAll('input[name="medEffekt"]'));
+      const effMin = document.getElementById('effektMin');
+      if(!effRadios.length || !effMin) return;
+      function syncMeds(){
+        const anyMed = medsChks.some(c=>c.checked);
+        effRadios.forEach(r=>{ r.disabled = !anyMed; if(!anyMed) r.checked = false; });
+        const effOk = effRadios.some(r=>r.checked && (r.value==='ja' || r.value==='delvis'));
+        effMin.disabled = !anyMed || !effOk;
+      }
+      medsChks.forEach(c=>c.addEventListener('change', syncMeds));
+      effRadios.forEach(r=>r.addEventListener('change', syncMeds));
+      syncMeds();
     })();
   </script>
 </body>
