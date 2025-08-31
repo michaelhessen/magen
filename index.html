@@ -257,7 +257,10 @@
     .chip input { position: absolute; opacity: 0; pointer-events: none; }
     .chip:has(input:checked) { background: var(--chip-selected-bg); color: var(--chip-selected-fg); border-color: transparent; }
     .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
-    .field-card { background: rgba(100,116,139,0.08); border: 1px solid rgba(100,116,139,0.2); padding: 8px; border-radius: var(--radius-md); }
+    .form-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+    .form-row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+    @media (max-width: 420px){ .form-row{ grid-template-columns:1fr; } }
+    .field-card{ background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.2); padding:10px; border-radius:12px; }
 
     /* Dashboard */
     #dashboard { margin-top: 10px; }
@@ -296,6 +299,8 @@
     .sheet .sheet-header { position: sticky; top: 0; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
     .sheet .sheet-body { padding: 12px 16px 80px; overflow-y: auto; overflow-x: hidden; max-height: calc(90vh - 120px); touch-action: pan-y; }
     .sheet .sheet-actions { position: sticky; bottom: 0; background: linear-gradient(to top, var(--card), rgba(0,0,0,0)); padding: 10px 16px 16px; display: flex; gap: 10px; justify-content: flex-end; }
+    .sheet .sheet-body{ padding:16px; }
+    .sheet .sheet-body .page{ padding-inline:0; } /* undvik dubbel-padding i sheet */
 
     /* Focus visibility */
     :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
@@ -572,8 +577,8 @@
         <button class="btn ghost" type="button" id="closePainSheet">Stäng</button>
       </div>
       <main class="sheet-body page">
-        <form id="painForm" autocomplete="off">
-          <div class="row">
+        <form id="painForm" class="form-grid" autocomplete="off">
+          <div class="form-row">
             <div class="field-card">
               <label for="painDate">Datum</label>
               <input id="painDate" type="date" required />
