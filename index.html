@@ -263,7 +263,7 @@
     .tooltip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid rgba(100,116,139,0.25); color: var(--text); padding: 6px 8px; border-radius: 8px; box-shadow: var(--shadow-sm); font-size: 12px; display: none; z-index: 40; }
 
     .canvas-wrap { position: relative; }
-    canvas { width: 100%; height: 220px; display: block; background: transparent; border-radius: 12px; }
+    canvas { width: 100%; height: 260px; display: block; background: transparent; border-radius: 12px; }
 
     [hidden] { display: none !important; }
 
@@ -323,7 +323,7 @@
 
     /* Bottom action bar */
     .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card); box-shadow: 0 -6px 24px rgba(15,23,42,0.12); border-top: 1px solid rgba(100,116,139,0.2); padding-bottom: env(safe-area-inset-bottom); }
-    .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .bar-btn { appearance: none; background: transparent; border: 1px solid rgba(100,116,139,0.2); color: var(--text); border-radius: 999px; padding: 14px 10px; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .bar-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
     .bar-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
@@ -365,6 +365,36 @@
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
+
+    /* Statistik v2 */
+    .stat2-controls{ position:sticky; top:60px; z-index:5; background:var(--card); border:1px solid rgba(100,116,139,.2); border-radius:12px; box-shadow:var(--shadow-sm); padding:10px; margin-bottom:12px; }
+    .stat2-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .stat2-row .spacer{ flex:1; }
+    .chip-btn{ padding:6px 10px; border-radius:999px; font-weight:700; border:1px solid rgba(100,116,139,.25); background:var(--chip-bg); color:var(--chip-fg); cursor:pointer; }
+    .chip-btn.active{ background:var(--accent); color:#fff; border-color:transparent; }
+    .stat2-saved{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .stat2-chip{ display:inline-flex; gap:6px; align-items:center; padding:6px 10px; border-radius:999px; background:var(--surface); border:1px solid rgba(100,116,139,.2); cursor:pointer; }
+    .stat2-chip .del{ background:transparent; border:none; cursor:pointer; color:var(--muted); }
+    .stat2-tabs{ display:flex; gap:8px; margin-top:8px; }
+    .stat2-tabs .tab{ padding:8px 12px; border-radius:999px; border:1px solid rgba(100,116,139,.25); background:var(--chip-bg); color:var(--chip-fg); cursor:pointer; font-weight:700; }
+    .stat2-tabs .tab.active{ background:var(--accent); color:#fff; border-color:transparent; }
+    .chart-grid{ display:grid; gap:12px; grid-template-columns:1fr; }
+    /* Alltid en graf per rad */
+    @media (min-width:480px){ .chart-grid{ grid-template-columns:1fr; } }
+    @media (min-width:860px){ .chart-grid{ grid-template-columns:1fr; } }
+    .chart-card{ background:var(--card); border:1px solid rgba(100,116,139,.2); border-radius:12px; box-shadow:var(--shadow-sm); padding:10px; min-width:0; }
+    .chart-card h4{ margin:4px 0 8px; }
+    .chart-actions{ display:flex; gap:6px; align-items:center; justify-content:flex-end; margin-top:6px; }
+    .btn-sm{ padding:6px 10px; border-radius:8px; border:1px solid rgba(100,116,139,.25); background:transparent; cursor:pointer; }
+    /* Rosa action-knappar i statistikvyn */
+    .stat2-controls .btn-sm, .chart-actions .btn-sm{
+      background: var(--primary);
+      color: #fff;
+      border-color: transparent;
+    }
+    .insights{ font-size:12px; color:var(--muted); margin-top:4px; }
+    .chart-scroll{ width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; }
+    .chart-scroll > canvas.wide{ display:block; width:1500px; max-width:none; height:260px; }
   </style>
 </head>
 <body>
@@ -568,43 +598,137 @@
       </div>
     </section>
 
-    <!-- Statistik -->
+    <!-- Statistik v2 -->
     <section id="tab-stat" role="tabpanel" aria-labelledby="tabbtn-stat" hidden>
-      <div class="row" id="statPainTypeBtns" style="gap:4px;margin-bottom:10px;">
-        <button class="btn stat-pain-btn tab-active" data-type="both">Båda</button>
-        <button class="btn stat-pain-btn" data-type="magont">Magont</button>
-        <button class="btn stat-pain-btn" data-type="livmoder-ont">Livmoder-ont</button>
+      <div class="stat2-controls" aria-label="Kontroller för statistik">
+        <div class="stat2-row" style="gap:6px;">
+          <strong>Intervall:</strong>
+          <button class="chip-btn" data-preset="1d">1 d</button>
+          <button class="chip-btn" data-preset="7d" class="active">7 d</button>
+          <button class="chip-btn" data-preset="14d">14 d</button>
+          <button class="chip-btn active" data-preset="30d">30 d</button>
+          <button class="chip-btn" data-preset="90d">90 d</button>
+          <button class="chip-btn" data-preset="1y">1 år</button>
+          <button class="chip-btn" data-preset="all">Alla</button>
+          <input type="date" id="stat2From" aria-label="Från" />
+          <input type="date" id="stat2To" aria-label="Till" />
+          <div class="spacer"></div>
+          <label style="display:inline-flex;align-items:center;gap:6px;">
+            <span>Detalj:</span>
+            <select id="stat2Gran">
+              <option value="day" selected>Dag</option>
+              <option value="week">Vecka</option>
+              <option value="month">Månad</option>
+              <option value="hour">Timme</option>
+            </select>
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="stat2Compare" />
+            <span>Jämför period</span>
+          </label>
+          <button id="stat2Save" class="btn-sm" aria-label="Spara vy">Spara vy</button>
+          <button id="stat2Reset" class="btn-sm" aria-label="Återställ">Återställ</button>
+        </div>
+        <div class="stat2-saved" id="stat2Saved"></div>
+        <div class="stat2-tabs" role="tablist" aria-label="Statistik-sidor">
+          <button class="tab active" role="tab" aria-selected="true" data-page="overview">Översikt</button>
+          <button class="tab" role="tab" aria-selected="false" data-page="pain">Smärta</button>
+          <button class="tab" role="tab" aria-selected="false" data-page="pee">Kiss</button>
+          <button class="tab" role="tab" aria-selected="false" data-page="fluid">Vätska</button>
+        </div>
+        <div id="stat2PainType" class="stat2-row" style="gap:6px; margin-top:6px;" hidden>
+          <strong>Typ:</strong>
+          <button class="chip-btn" data-paintype="both">Båda</button>
+          <button class="chip-btn" data-paintype="magont">Magont</button>
+          <button class="chip-btn" data-paintype="livmoder-ont">Livmoder‑ont</button>
+        </div>
       </div>
-      <div class="grid grid-2">
-        <div class="card">
-          <h3>Smärta – nivå över tid</h3>
-          <div class="canvas-wrap"><canvas id="painLine2"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Smärta – loggar per dag</h3>
-          <div class="canvas-wrap"><canvas id="painBars2"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Smärta – läkemedel</h3>
-          <div class="canvas-wrap"><canvas id="painMeds2"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Smärta – sammanlagd tid per dag (min)</h3>
-          <div class="canvas-wrap"><canvas id="painDuration2"></canvas></div>
-        </div>
 
-        <div class="card">
-          <h3>Smärta – median/medel per dag</h3>
-          <div class="canvas-wrap"><canvas id="painBox2"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Kiss – antal per dag</h3>
-          <div class="canvas-wrap"><canvas id="peeBars2"></canvas></div>
-        </div>
-        <div class="card">
-          <h3>Vätska – ml per dag</h3>
-          <div class="canvas-wrap"><canvas id="fluidBars2"></canvas></div>
-        </div>
+      <div id="stat2Pages">
+        <!-- Översikt -->
+        <section id="stat2-overview" aria-label="Översikt">
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Smärta – trend (daglig median)</h4>
+              <canvas id="ov_pain_trend"></canvas>
+              <div class="chart-actions">
+                <button class="btn-sm" data-export="ov_pain_trend">Exportera</button>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h4>Kiss – antal per dag + 7d-MA</h4>
+              <canvas id="ov_pee_daily"></canvas>
+              <div class="chart-actions">
+                <button class="btn-sm" data-export="ov_pee_daily">Exportera</button>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h4>Vätska – ml per dag + mål</h4>
+              <canvas id="ov_fluid_daily"></canvas>
+              <div class="chart-actions">
+                <button class="btn-sm" data-export="ov_fluid_daily">Exportera</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Smärta -->
+        <section id="stat2-pain" aria-label="Smärta" hidden>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Trend (daglig median)</h4>
+              <canvas id="p_trend"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="p_trend">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Episoder per dag</h4>
+              <canvas id="p_episodes"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="p_episodes">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Varaktighet (min/dag)</h4>
+              <canvas id="p_duration"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="p_duration">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Smärtlindring</h4>
+              <canvas id="p_meds"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="p_meds">Exportera</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Kiss -->
+        <section id="stat2-pee" aria-label="Kiss" hidden>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Antal per dag + 7d-MA</h4>
+              <canvas id="k_daily"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="k_daily">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Dygnsrytm (per timme)</h4>
+              <div class="chart-scroll"><canvas id="k_clock" class="wide"></canvas></div>
+              <div class="chart-actions"><button class="btn-sm" data-export="k_clock">Exportera</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Vätska -->
+        <section id="stat2-fluid" aria-label="Vätska" hidden>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Intag per dag + mål + 7d-MA</h4>
+              <canvas id="v_daily"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="v_daily">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Dryckestyp (andel)</h4>
+              <canvas id="v_types"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="v_types">Exportera</button></div>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -829,7 +953,6 @@
   <nav class="bottom-bar" role="navigation" aria-label="Snabbnavigering">
     <div class="bottom-bar-inner">
       <button id="navHome" class="bar-btn active" type="button" aria-label="Hem">🏠 Hem</button>
-      <button id="navLog" class="bar-btn" type="button" aria-label="Logga">✚ Logga</button>
       <button id="navStats" class="bar-btn" type="button" aria-label="Statistik">📊 Statistik</button>
       <button id="navSettings" class="bar-btn" type="button" aria-label="Inställningar">⚙️ Inställn.</button>
     </div>
@@ -1287,6 +1410,15 @@
 
       const Charts = (() => {
         const tooltipEl = document.getElementById('chartTooltip');
+        function shortDateLabel(dstr){
+          if(!dstr) return '';
+          const parts = dstr.split('-');
+          if (parts.length !== 3) return dstr;
+          const [y,m,d] = parts;
+          const di = parseInt(d,10); const mi = parseInt(m,10);
+          if (!Number.isFinite(di) || !Number.isFinite(mi)) return dstr;
+          return `${mi}/${di}`; // kortform: månad/dag
+        }
         function showTip(html, x, y) {
           tooltipEl.innerHTML = html;
           tooltipEl.style.display = 'block';
@@ -1329,11 +1461,12 @@
           const steps = Math.min(6, max);
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
           ctx.font = '12px system-ui';
+          ctx.textAlign = 'right';
           for (let i=0;i<=steps;i++) {
             const ty = y+h - (i/steps)*h;
             const val = Math.round((i/steps)*max);
             ctx.strokeStyle = 'rgba(100,116,139,0.15)'; ctx.beginPath(); ctx.moveTo(x,ty); ctx.lineTo(x+w,ty); ctx.stroke();
-            ctx.fillText(String(val), x-24, ty+4);
+            ctx.fillText(String(val), x-8, ty+4);
           }
           return max;
         }
@@ -1341,11 +1474,12 @@
           const steps = 9; // 1..10
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
           ctx.font = '12px system-ui';
+          ctx.textAlign = 'right';
           for (let i=0;i<=steps;i++) {
             const val = 1 + i;
             const ty = y+h - (i/steps)*h;
             ctx.strokeStyle = 'rgba(100,116,139,0.15)'; ctx.beginPath(); ctx.moveTo(x,ty); ctx.lineTo(x+w,ty); ctx.stroke();
-            ctx.fillText(String(val), x-24, ty+4);
+            ctx.fillText(String(val), x-8, ty+4);
           }
           return 10;
         }
@@ -1353,7 +1487,7 @@
         function drawLinePain(canvas, painData) {
           if (!canvas) return;
           const { ctx, w, h } = setupCanvas(canvas);
-          const padding = { l: 40, r: 10, t: 10, b: 24 };
+          const padding = { l: 40, r: 10, t: 10, b: 72 };
           axis(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b);
           yTicksLevel(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b);
 
@@ -1383,6 +1517,16 @@
           drawSeries(pointsMag, styles.getPropertyValue('--primary-600').trim() || '#db2777');
           drawSeries(pointsLiv, styles.getPropertyValue('--accent-600').trim() || '#7c3aed');
 
+          // X-axel: datumetiketter (månad/dag) för varje dag som har datapunkter
+          const dayLabels = Array.from(new Set(arr.map(p=>Utils.splitISO(p.timestamp).datum)));
+          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+          ctx.font = '12px system-ui';
+          for (let i=0; i<dayLabels.length; i++) {
+            const d = dayLabels[i];
+            const xDay = xPos(d + 'T12:00:00'); // mitt på dagen
+            ctx.save(); ctx.translate(xDay, h-8); ctx.rotate(-Math.PI/6); ctx.textAlign='right'; ctx.fillText(shortDateLabel(d), 0, 0); ctx.restore();
+          }
+
           // Tooltip interaktivitet
           const hitboxes = [...pointsMag, ...pointsLiv].map(pt=>({ x:pt.x, y:pt.y, r:6, data:pt.data }));
           canvas.onmousemove = (ev) => {
@@ -1404,7 +1548,7 @@
         function drawBarsCounts(canvas, countsMap) {
           if (!canvas) return;
           const { ctx, w, h } = setupCanvas(canvas);
-          const padding = { l: 40, r: 10, t: 10, b: 40 };
+          const padding = { l: 40, r: 10, t: 10, b: 72 };
           const entries = Array.from(countsMap.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
           const labels = entries.map(e=>e[0]);
           const values = entries.map(e=>e[1]);
@@ -1427,10 +1571,10 @@
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
             ctx.font = '12px system-ui';
             ctx.save();
-            ctx.translate(x + barW/2, h-4);
+            ctx.translate(x + barW/2, h-8);
             ctx.rotate(-Math.PI/6);
             ctx.textAlign = 'right';
-            ctx.fillText(labels[i], 0, 0);
+            ctx.fillText(shortDateLabel(labels[i]), 0, 0);
             ctx.restore();
             ctx.fillStyle = color;
           }
@@ -1448,7 +1592,7 @@
         function drawBarsDuration(canvas, minutesMap) {
           if (!canvas) return;
           const { ctx, w, h } = setupCanvas(canvas);
-          const padding = { l: 40, r: 10, t: 10, b: 40 };
+          const padding = { l: 40, r: 10, t: 10, b: 72 };
           const entries = Array.from(minutesMap.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
           const labels = entries.map(e=>e[0]);
           const values = entries.map(e=>e[1]);
@@ -1471,10 +1615,10 @@
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
             ctx.font = '12px system-ui';
             ctx.save();
-            ctx.translate(x + barW/2, h-4);
+            ctx.translate(x + barW/2, h-8);
             ctx.rotate(-Math.PI/6);
             ctx.textAlign = 'right';
-            ctx.fillText(labels[i], 0, 0);
+            ctx.fillText(shortDateLabel(labels[i]), 0, 0);
             ctx.restore();
             ctx.fillStyle = color;
           }
@@ -1533,7 +1677,7 @@
         function drawFluidBars(canvas, perDay, goal) {
           if (!canvas) return;
           const { ctx, w, h } = setupCanvas(canvas);
-          const padding = { l: 40, r: 10, t: 10, b: 40 };
+          const padding = { l: 40, r: 10, t: 10, b: 72 };
           const entries = Array.from(perDay.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
           const labels = entries.map(e=>e[0]); const values = entries.map(e=>e[1]);
           const maxVal = Math.max(goal, values.length? Math.max(...values): 0);
@@ -1550,12 +1694,16 @@
             const hVal = (values[i]/maxY)*plotH; const y = padding.t + plotH - hVal;
             ctx.fillRect(x, y, barW, hVal); hit.push({ x,y,w:barW,h:hVal,label:labels[i],val:values[i] });
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted');
-            ctx.font = '12px system-ui'; ctx.save(); ctx.translate(x + barW/2, h-4); ctx.rotate(-Math.PI/6); ctx.textAlign='right'; ctx.fillText(labels[i],0,0); ctx.restore(); ctx.fillStyle=color;
+            ctx.font = '12px system-ui'; ctx.save(); ctx.translate(x + barW/2, h-8); ctx.rotate(-Math.PI/6); ctx.textAlign='right'; ctx.fillText(labels[i],0,0); ctx.restore(); ctx.fillStyle=color;
           }
           // Mål-linje
           const yGoal = padding.t + plotH - (goal/maxY)*plotH;
           ctx.strokeStyle = styles.getPropertyValue('--ok').trim(); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(padding.l, yGoal); ctx.lineTo(padding.l+plotW, yGoal); ctx.stroke(); ctx.setLineDash([]);
-          ctx.fillStyle = styles.getPropertyValue('--ok').trim(); ctx.fillText(`${goal} ml mål`, padding.l + 6, yGoal - 6);
+          // Målets etikett: flytta upp till höger för bättre läsbarhet
+          ctx.fillStyle = styles.getPropertyValue('--ok').trim();
+          ctx.textAlign = 'right';
+          const goalLabelY = Math.max(padding.t + 10, yGoal - 36);
+          ctx.fillText(`${goal} ml mål`, padding.l + plotW - 6, goalLabelY);
 
 
 
@@ -1587,7 +1735,7 @@
           if (!canvas) return;
           // perDayPerTyp: Map<datum, { magont: [nivåer], liv: [nivåer] }>
           const { ctx, w, h } = setupCanvas(canvas);
-          const padding = { l: 40, r: 10, t: 10, b: 40 };
+          const padding = { l: 40, r: 10, t: 10, b: 72 };
           axis(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b);
           yTicksLevel(ctx, padding.l, padding.t, w-padding.l-padding.r, h-padding.t-padding.b);
           const entries = Array.from(perDayPerTyp.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
@@ -1617,7 +1765,7 @@
             drawOne(obj.magont, xBase + colW/2 - colGap, styles.getPropertyValue('--primary-600').trim());
             drawOne(obj['livmoder-ont'], xBase + colW/2 + colGap, styles.getPropertyValue('--accent-600').trim());
             // label
-            ctx.save(); ctx.translate(xBase + colW/2, h-6); ctx.rotate(-Math.PI/6); ctx.textAlign = 'right'; ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted'); ctx.fillText(labels[i],0,0); ctx.restore();
+            ctx.save(); ctx.translate(xBase + colW/2, h-8); ctx.rotate(-Math.PI/6); ctx.textAlign = 'right'; ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted'); ctx.fillText(shortDateLabel(labels[i]),0,0); ctx.restore();
           }
         }
 
@@ -2507,6 +2655,8 @@
             if (!els.peeDate.dataset.dirty && !els.peeTime.dataset.dirty) setNow(els.peeDate, els.peeTime);
           } else if (name==='vatska') {
             if (!els.fluidDate.dataset.dirty && !els.fluidTime.dataset.dirty) setNow(els.fluidDate, els.fluidTime);
+          } else if (name==='stat') {
+            if (window.StatsV2 && typeof window.StatsV2.onShow === 'function') window.StatsV2.onShow();
           }
           // Vänta till layout uppdaterats innan vi ritar, särskilt när en sektion byter hidden
           if (typeof requestAnimationFrame === 'function') {
@@ -2541,11 +2691,527 @@
         UI.bind();
         UI.initTheme();
         UI.initDefaults();
+        // Exponera state globalt för statistik v2
+        window.State = State; window.AppState = State;
         UI.renderAll();
         Charts.rebuildAll();
+        if (window.StatsV2 && typeof window.StatsV2.init === 'function') window.StatsV2.init();
       }
 
       return { init };
+    })();
+
+    // Statistik v2 – Canvas-baserad (ingen Chart.js)
+    (function(){
+      const d = document;
+      const $ = (id)=>d.getElementById(id);
+      const qall = (sel,root=d)=>Array.from(root.querySelectorAll(sel));
+      const storeKey = 'statsv2.views';
+      const dayMs = 86400000;
+
+      const state = {
+        inited:false,
+        page:'overview',
+        rangePreset:'7d',
+        from:null,
+        to:null,
+        gran:'day',
+        compare:false,
+        painTyp:'both',
+        views:[],
+      };
+
+      const lastData = {}; // id -> { labels, datasets: [{label,data}] }
+      const tipEl = document.getElementById('chartTooltip');
+      function showTip(html, x, y){ if(!tipEl) return; tipEl.innerHTML=html; tipEl.style.display='block'; tipEl.style.left=(x+8)+'px'; tipEl.style.top=(y+8)+'px'; }
+      function hideTip(){ if(!tipEl) return; tipEl.style.display='none'; }
+
+      function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+      // Canvas helpers (från appens tidigare grafikstil)
+      function setupCanvas(canvas){
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        let w = rect.width || (canvas.parentElement?.clientWidth || 600);
+        let h = rect.height || 260;
+        canvas.width = Math.floor(w*dpr); canvas.height = Math.floor(h*dpr);
+        const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+        return { ctx, w, h };
+      }
+      function axis(ctx, x, y, w, h){ ctx.strokeStyle='rgba(100,116,139,0.4)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,y+h); ctx.lineTo(x+w,y+h); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+h); ctx.stroke(); }
+      function yTicksInteger(ctx, x, y, w, h, maxVal){
+        const niceMax = (n)=>{ if(n<=5) return 5; if(n<=10) return 10; if(n<=20) return 20; if(n<=50) return 50; return Math.ceil(n/50)*50; };
+        const max = Math.max(1, niceMax(maxVal)); const steps = Math.min(6, max);
+        ctx.fillStyle = cssVar('--muted'); ctx.font='12px system-ui'; ctx.textAlign='right';
+        for(let i=0;i<=steps;i++){ const ty = y+h - (i/steps)*h; const val = Math.round((i/steps)*max); ctx.strokeStyle='rgba(100,116,139,0.15)'; ctx.beginPath(); ctx.moveTo(x,ty); ctx.lineTo(x+w,ty); ctx.stroke(); ctx.fillText(String(val), x-8, ty+4); }
+        return max;
+      }
+      function fmtMD(dstr){ const [y,m,d] = (dstr||'').split('-'); return `${parseInt(m,10)}/${parseInt(d,10)}`; }
+      function drawLabelsX(ctx, labels, x, y, w, h, getX, labeller){
+        ctx.fillStyle=cssVar('--muted'); ctx.font='12px system-ui';
+        const baseline = y + h + 16; // under grafen
+        for(let i=0;i<labels.length;i++){
+          const lx = getX(i);
+          const txt = labeller ? labeller(labels[i]) : fmtMD(labels[i]);
+          ctx.save(); ctx.translate(lx, baseline); ctx.rotate(-Math.PI/6); ctx.textAlign='right'; ctx.fillText(txt, 0, 0); ctx.restore();
+        }
+      }
+
+      function parseISODateKey(iso){ return (iso||'').split('T')[0]; }
+      function clampRange(from,to){ if (from && to && from>to) { const t=from; from=to; to=t; } return [from,to]; }
+      function daysBetween(from,to){ const arr=[]; let t=new Date(from+'T00:00:00'); const end=new Date(to+'T00:00:00'); for(; t<=end; t=new Date(t.getTime()+dayMs)){ arr.push(t.toISOString().slice(0,10)); } return arr; }
+      function movingAvg(values, w){ const out=[]; for(let i=0;i<values.length;i++){ let s=0,c=0; for(let j=i-w+1;j<=i;j++){ if(j>=0){ s+=values[j]; c++; } } out.push(c? s/c : 0); } return out; }
+      function countByDay(arr, from, to){ const m=new Map(); for(const it of arr){ const d=parseISODateKey(it.timestamp); if (d>=from && d<=to){ m.set(d,(m.get(d)||0)+1); } } return m; }
+      function countPainByDay(arr, from, to, typ){ const m=new Map(); for(const it of arr){ if(typ!=='both' && it.typ!==typ) continue; const d=parseISODateKey(it.timestamp); if(d>=from && d<=to){ m.set(d,(m.get(d)||0)+1); } } return m; }
+      function fluidByDay(arr, from, to){ const m=new Map(); for(const it of arr){ const d=parseISODateKey(it.timestamp); if (d>=from && d<=to){ m.set(d,(m.get(d)||0)+(it.volym_ml||0)); } } return m; }
+      function painByDayLevelMedian(arr, from, to, typ){ const m = new Map(); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d<from||d>to) continue; if(!m.has(d)) m.set(d,[]); m.get(d).push(p.niva); } const med=new Map(); for(const [k,v] of m){ const s=v.slice().sort((a,b)=>a-b); const mid=Math.floor(s.length/2); const val = s.length%2? s[mid] : (s[mid-1]+s[mid])/2; med.set(k,val); } return med; }
+      function painDurationByDay(arr, from, to, typ){ const m=new Map(); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d<from||d>to) continue; let mins=0; if(p.starttid && p.sluttid){ const [sh,sm]=(p.starttid||'').split(':').map(n=>parseInt(n,10)); const [eh,em]=(p.sluttid||'').split(':').map(n=>parseInt(n,10)); if(Number.isFinite(sh)&&Number.isFinite(sm)&&Number.isFinite(eh)&&Number.isFinite(em)){ const s=sh*60+sm, e=eh*60+em; mins=Math.max(0,e-s); } } m.set(d,(m.get(d)||0)+mins); } return m; }
+      function peeClockHist(arr, from, to){ const bins=Array(24).fill(0); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d<from||d>to) continue; const hh=parseInt(it.timestamp.slice(11,13),10); if(Number.isFinite(hh)) bins[hh]++; } return bins; }
+      function pieTypes(arr, from, to){ const m=new Map(); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d<from||d>to) continue; const k=(it.dryck||'okänd').trim()||'okänd'; m.set(k,(m.get(k)||0)+(it.volym_ml||0)); } const labels=[...m.keys()]; const values=labels.map(k=>m.get(k)); return { labels, values }; }
+      function painMedsByDay(arr, from, to, typ){
+        const m = new Map();
+        const norm = (s)=> String(s||'').toLowerCase().trim();
+        function bucket(d){
+          if (!m.has(d)) m.set(d, { med:0, ja:0, delvis:0, nej:0, vet:0, okand:0, ibuprofen:0, paracetamol:0, naproxen:0, other:0 });
+          return m.get(d);
+        }
+        for (const p of arr){
+          if (typ!=='both' && p.typ!==typ) continue;
+          const d = p.datum || parseISODateKey(p.timestamp); if (d<from || d>to) continue;
+          const meds = Array.isArray(p.meds) ? p.meds : [];
+          if (meds.length>0){
+            const o = bucket(d);
+            o.med++;
+            const e = norm(p.med_effekt);
+            if (e==='ja') o.ja++; else if (e==='delvis') o.delvis++; else if (e==='nej') o.nej++; else if (e==='vet ej') o.vet++; else o.okand++;
+            for (const raw of meds){ const nm = norm(raw); if (nm==='ibuprofen') o.ibuprofen++; else if(nm==='paracetamol') o.paracetamol++; else if(nm==='naproxen') o.naproxen++; else o.other++; }
+          }
+        }
+        return m;
+      }
+      function foldMedsToGran(dayMap, gran){
+        if (gran==='day') return dayMap;
+        const out = new Map();
+        for (const [day, o] of dayMap){
+          let g = day; if (gran==='week') g = weekStartKey(day); else if (gran==='month') g = monthKey(day);
+          if (!out.has(g)) out.set(g, { med:0, ja:0, delvis:0, nej:0, vet:0, okand:0, ibuprofen:0, paracetamol:0, naproxen:0, other:0 });
+          const t = out.get(g); t.med+=o.med; t.ja+=o.ja; t.delvis+=o.delvis; t.nej+=o.nej; t.vet+=o.vet; t.okand+=o.okand; t.ibuprofen+=o.ibuprofen; t.paracetamol+=o.paracetamol; t.naproxen+=o.naproxen; t.other+=o.other;
+        }
+        return out;
+      }
+      function painMedsByHour(arr, dayKey, typ){
+        const norm = (s)=> String(s||'').toLowerCase().trim();
+        const med=Array(24).fill(0), ja=Array(24).fill(0), ibuprofen=Array(24).fill(0), paracetamol=Array(24).fill(0), naproxen=Array(24).fill(0), other=Array(24).fill(0);
+        for (const p of arr){
+          if (typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d!==dayKey) continue;
+          const meds = Array.isArray(p.meds)? p.meds : []; if (meds.length===0) continue;
+          const hh = (p.starttid||p.tid||'00:00').slice(0,2); const h=parseInt(hh,10); if(!Number.isFinite(h)) continue;
+          med[h]++; const e=norm(p.med_effekt); if (e==='ja') ja[h]++;
+          for (const raw of meds){ const nm = norm(raw); if(nm==='ibuprofen') ibuprofen[h]++; else if(nm==='paracetamol') paracetamol[h]++; else if(nm==='naproxen') naproxen[h]++; else other[h]++; }
+        }
+        return { med, ja, ibuprofen, paracetamol, naproxen, other };
+      }
+
+      // Granularity helpers: day/week/month
+      function weekStartKey(dstr){ const d=new Date(dstr+'T00:00:00'); const day=(d.getDay()+6)%7; const ms=d.getTime() - day*dayMs; const m=new Date(ms); const yyyy=m.getFullYear(); const mm=String(m.getMonth()+1).padStart(2,'0'); const dd=String(m.getDate()).padStart(2,'0'); return `${yyyy}-${mm}-${dd}`; }
+      function monthKey(dstr){ const d=new Date(dstr+'T00:00:00'); const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); return `${yyyy}-${mm}`; }
+      function groupKeys(gran, from, to){
+        const perDay = daysBetween(from,to);
+        if (gran==='day') return perDay;
+        const set = new Set();
+        if (gran==='week') { for(const k of perDay) set.add(weekStartKey(k)); return Array.from(set).sort(); }
+        if (gran==='month') { for(const k of perDay) set.add(monthKey(k)); return Array.from(set).sort(); }
+        if (gran==='hour') { return Array.from({length:24},(_,i)=> String(i).padStart(2,'0')); }
+        return perDay;
+      }
+      function isoWeekFromKey(dkey){
+        // dkey expected 'YYYY-MM-DD' (week start)
+        const d = new Date(dkey + 'T00:00:00');
+        const dayNum = (d.getDay() || 7); // make Sunday 7
+        d.setDate(d.getDate() + 4 - dayNum); // Thursday of this week
+        const yearStart = new Date(d.getFullYear(), 0, 1);
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return weekNo;
+      }
+      function fmtLabelForGran(key){
+        if (state.gran==='day') { const [y,m,d]=key.split('-'); return `${parseInt(m,10)}/${parseInt(d,10)}`; }
+        if (state.gran==='week') { const w = isoWeekFromKey(key); return `v. ${w}`; }
+        // month key YYYY-MM -> "Jan", "Feb", ... (svenska förkortningar)
+        const [y,m] = key.split('-');
+        const months = ['Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+        const mi = Math.max(1, Math.min(12, parseInt(m,10))) - 1;
+        return months[mi] || key;
+      }
+      function sumMapByGran(dayMap, gran){ const m=new Map(); for(const [day,val] of dayMap){ let g=day; if(gran==='week') g=weekStartKey(day); else if(gran==='month') g=monthKey(day); m.set(g,(m.get(g)||0)+val); } return m; }
+      function fmtLabelHour(hh){ return `${parseInt(hh,10)}:00`; }
+      function countByHour(arr, dayKey){ const bins=Array(24).fill(0); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d!==dayKey) continue; const h=parseInt(it.timestamp.slice(11,13),10); if(Number.isFinite(h)) bins[h]++; } return bins; }
+      function fluidByHour(arr, dayKey){ const bins=Array(24).fill(0); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d!==dayKey) continue; const h=parseInt(it.timestamp.slice(11,13),10); if(Number.isFinite(h)) bins[h]+= (it.volym_ml||0); } return bins; }
+      function painMedianByHour(arr, dayKey, typ){ const groups=Array.from({length:24},()=>[]); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d!==dayKey) continue; const hh = (p.starttid||p.tid||'00:00').slice(0,2); const h=parseInt(hh,10); if(Number.isFinite(h)) groups[h].push(p.niva); } return groups.map(g=>{ if(!g.length) return 0; const s=g.slice().sort((a,b)=>a-b); const mid=Math.floor(s.length/2); return s.length%2? s[mid] : (s[mid-1]+s[mid])/2; }); }
+      function painEpisodesByHour(arr, dayKey, typ){ const bins=Array(24).fill(0); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d!==dayKey) continue; const hh = (p.starttid||p.tid||'00:00').slice(0,2); const h=parseInt(hh,10); if(Number.isFinite(h)) bins[h]++; } return bins; }
+      function painDurationByHourApprox(arr, dayKey, typ){ const bins=Array(24).fill(0); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d!==dayKey) continue; if(p.starttid && p.sluttid){ const [sh,sm]=(p.starttid||'').split(':').map(n=>parseInt(n,10)); const [eh,em]=(p.sluttid||'').split(':').map(n=>parseInt(n,10)); if(Number.isFinite(sh)&&Number.isFinite(sm)&&Number.isFinite(eh)&&Number.isFinite(em)){ const s=sh*60+sm, e=eh*60+em; const mins=Math.max(0,e-s); bins[sh]+=mins; } } } return bins; }
+      function lastNDaysKeys(toKey, n){ const keys=[]; let d=new Date(toKey+'T00:00:00'); for(let i=0;i<n;i++){ const yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0'); keys.push(`${yyyy}-${mm}-${dd}`); d=new Date(d.getTime()-dayMs); } return keys; }
+      function hourMAForLastDays(arr, toKey, fromKey, n){ const keys=lastNDaysKeys(toKey, n).filter(k=>k>=fromKey); const acc=Array(24).fill(0); if(keys.length===0) return acc; for(const k of keys){ const bins=countByHour(arr, k); for(let h=0;h<24;h++) acc[h]+=bins[h]; } for(let h=0;h<24;h++) acc[h]=acc[h]/keys.length; return acc; }
+      function painMedianByGran(arr, from, to, typ, gran){ const groups=new Map(); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d<from||d>to) continue; let g=d; if(gran==='week') g=weekStartKey(d); else if(gran==='month') g=monthKey(d); if(!groups.has(g)) groups.set(g,[]); groups.get(g).push(p.niva); } const out=new Map(); for(const [g,vals] of groups){ const s=vals.slice().sort((a,b)=>a-b); const mid=Math.floor(s.length/2); const val=s.length%2? s[mid] : (s[mid-1]+s[mid])/2; out.set(g,val); } return out; }
+      function maWindow(){ return state.gran==='day' ? 7 : 3; }
+
+      // Drawing primitives
+      function drawBars(canvasId, labels, values, opts={}){
+        const canvas = $(canvasId); if(!canvas) return;
+        lastData[canvasId] = { labels, datasets:[{ label: opts.label||'värde', data: values }] };
+        const { ctx, w, h } = setupCanvas(canvas);
+        const padding = { l: 44, r: 10, t: 12, b: 72 };
+        const plotW = w-padding.l-padding.r, plotH = h-padding.t-padding.b;
+        axis(ctx, padding.l, padding.t, plotW, plotH);
+        const maxVal = Math.max(1, opts.maxY || Math.max(...values, 0, opts.goal||0));
+        const maxY = yTicksInteger(ctx, padding.l, padding.t, plotW, plotH, maxVal);
+        const barW = Math.max(10, plotW/(labels.length*1.2 || 1));
+        const color = (opts.color || cssVar('--primary') || '#ec4899');
+        ctx.fillStyle = color;
+        for(let i=0;i<labels.length;i++){
+          const x = padding.l + i*(barW*1.2);
+          const hVal = (values[i]/maxY)*plotH; const y = padding.t + plotH - hVal;
+          ctx.fillRect(x, y, barW, hVal);
+        }
+        // Goal line
+        if (opts.goal){
+          const yGoal = padding.t + plotH - (opts.goal/maxY)*plotH;
+          ctx.save(); ctx.strokeStyle = cssVar('--ok')||'#16a34a'; ctx.setLineDash([6,6]);
+          ctx.beginPath(); ctx.moveTo(padding.l, yGoal); ctx.lineTo(padding.l+plotW, yGoal); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+        }
+        drawLabelsX(ctx, labels, padding.l, padding.t, plotW, plotH, (i)=> padding.l + i*(barW*1.2) + barW/2, opts.labelFormatter);
+        // Overlay line (e.g., moving average)
+        if (opts.line){
+          ctx.save(); ctx.strokeStyle = opts.line.color || (cssVar('--accent')||'#a78bfa'); ctx.lineWidth = 2; ctx.beginPath();
+          for(let i=0;i<labels.length;i++){
+            const x = padding.l + i*(barW*1.2) + barW/2;
+            const y = padding.t + plotH - ((opts.line.values[i]||0)/maxY)*plotH;
+            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+          }
+          ctx.stroke(); ctx.restore();
+          lastData[canvasId].datasets.push({ label: opts.line.label||'linje', data: opts.line.values.slice() });
+        }
+
+        // Interaktivitet: hitta index vid klick/hover
+        function hitIndex(mx,my){
+          const left = padding.l; const right = padding.l + plotW; if(mx<left || mx>right) return null;
+          const step = barW*1.2; const idx = Math.floor((mx - padding.l) / step + 0.1);
+          if (idx<0 || idx>=labels.length) return null;
+          const x = padding.l + idx*step; if (mx < x || mx > x+barW) return null; // kräver att vara över stapeln
+          return idx;
+        }
+        function valueLines(i){
+          const lines = [];
+          for(const ds of lastData[canvasId].datasets){ const v=ds.data[i]; lines.push(`${ds.label}: ${v!=null? v: '-'}`); }
+          return lines.join('<br/>');
+        }
+        function onMove(ev){
+          const r=canvas.getBoundingClientRect(); const mx=ev.clientX-r.left, my=ev.clientY-r.top; const i=hitIndex(mx,my); if(i==null){ hideTip(); return; }
+          const lab = opts.labelFormatter ? opts.labelFormatter(labels[i]) : fmtMD(labels[i]);
+          const html = opts.tooltipFormatter ? opts.tooltipFormatter(i, lab) : (`<b>${lab}</b><br/>${valueLines(i)}`);
+          showTip(html, ev.clientX, ev.clientY);
+        }
+        function onClick(ev){ onMove(ev); }
+        canvas.onmousemove = onMove; canvas.onmouseleave = hideTip; canvas.onclick = onClick;
+      }
+
+      function drawLine(canvasId, labels, values, opts={}){
+        const canvas = $(canvasId); if(!canvas) return;
+        lastData[canvasId] = { labels, datasets:[{ label: opts.label||'serie', data: values }] };
+        const { ctx, w, h } = setupCanvas(canvas);
+        const padding = { l: 44, r: 10, t: 12, b: 72 };
+        const plotW = w-padding.l-padding.r, plotH = h-padding.t-padding.b;
+        axis(ctx, padding.l, padding.t, plotW, plotH);
+        const maxVal = Math.max(1, opts.maxY || Math.max(...values, 0));
+        const maxY = yTicksInteger(ctx, padding.l, padding.t, plotW, plotH, maxVal);
+        ctx.save(); ctx.strokeStyle = opts.color || (cssVar('--accent')||'#a78bfa'); ctx.lineWidth=2; ctx.beginPath();
+        for(let i=0;i<labels.length;i++){
+          const x = padding.l + (plotW*(i/(Math.max(1,labels.length-1))));
+          const y = padding.t + plotH - ((values[i]||0)/maxY)*plotH;
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke(); ctx.restore();
+        drawLabelsX(ctx, labels, padding.l, padding.t, plotW, plotH, (i)=> padding.l + (plotW*(i/(Math.max(1,labels.length-1)))), opts.labelFormatter );
+
+        // Interaktivitet: närmast index per x
+        function hitIndex(mx){
+          if (mx < padding.l || mx > padding.l+plotW) return null;
+          const step = (labels.length<=1) ? plotW : (plotW/(labels.length-1));
+          const idx = Math.round((mx - padding.l)/step);
+          return Math.max(0, Math.min(labels.length-1, idx));
+        }
+        function valueLines(i){
+          const lines = [];
+          for(const ds of lastData[canvasId].datasets){ const v=ds.data[i]; lines.push(`${ds.label}: ${v!=null? v: '-'}`); }
+          return lines.join('<br/>');
+        }
+        function onMove(ev){ const r=canvas.getBoundingClientRect(); const mx=ev.clientX-r.left; const i=hitIndex(mx); if(i==null){ hideTip(); return; } const lab = opts.labelFormatter ? opts.labelFormatter(labels[i]) : fmtMD(labels[i]); const html = `<b>${lab}</b><br/>${valueLines(i)}`; showTip(html, ev.clientX, ev.clientY); }
+        function onClick(ev){ onMove(ev); }
+        canvas.onmousemove = onMove; canvas.onmouseleave = hideTip; canvas.onclick = onClick;
+      }
+
+      function drawPie(canvasId, labels, values){
+        const canvas = $(canvasId); if(!canvas) return;
+        lastData[canvasId] = { labels, datasets:[{ label:'andel', data: values }] };
+        const { ctx, w, h } = setupCanvas(canvas);
+        const total = values.reduce((a,b)=>a+b,0) || 1;
+        const cx=w/2, cy=h/2, r=Math.min(w,h)/3;
+        const palette = ['#60a5fa','#a78bfa','#34d399','#f472b6','#f59e0b','#f87171','#22d3ee','#94a3b8'];
+        let start= -Math.PI/2;
+        for(let i=0;i<values.length;i++){
+          const frac = values[i]/total; const end = start + frac*Math.PI*2;
+          ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath(); ctx.fillStyle = palette[i%palette.length]; ctx.fill();
+          start=end;
+        }
+        // simple legend
+        ctx.font='12px system-ui'; ctx.fillStyle = cssVar('--muted');
+        let y0 = h - 12*Math.ceil(labels.length/2) - 8; let x0 = 12;
+        for(let i=0;i<labels.length;i++){
+          const col = palette[i%palette.length];
+          ctx.fillStyle=col; ctx.fillRect(x0, y0-10, 10, 10);
+          ctx.fillStyle=cssVar('--muted'); ctx.fillText(`${labels[i]}`, x0+14, y0);
+          if ((i%2)===1){ y0+=16; x0=12; } else { x0 = w/2; }
+        }
+      }
+
+      function ensureRange(){
+        const today = new Date(); const to = state.to || new Date(today.getFullYear(),today.getMonth(),today.getDate());
+        let from;
+        switch(state.rangePreset){
+          case '1d': from = new Date(to.getTime()); break;
+          case '7d': from = new Date(to.getTime()-6*dayMs); break;
+          case '14d': from = new Date(to.getTime()-13*dayMs); break;
+          case '30d': from = new Date(to.getTime()-29*dayMs); break;
+          case '90d': from = new Date(to.getTime()-89*dayMs); break;
+          case '1y': from = new Date(to.getTime()-364*dayMs); break;
+          case 'all': default:
+            const S = (window.AppState || window.State || {});
+            const all = [...(S.pain||[]),(S.pee||[]),(S.fluid||[])].map(x=>parseISODateKey(x.timestamp)).sort();
+            from = all.length? new Date(all[0]+'T00:00:00') : new Date(to.getTime()-29*dayMs);
+        }
+        const f = (state.from ? new Date(state.from+'T00:00:00') : from);
+        const t = (state.to ? new Date(state.to+'T00:00:00') : to);
+        const [F,T] = clampRange(f,t);
+        const fk = F.toISOString().slice(0,10); const tk = T.toISOString().slice(0,10);
+        $('stat2From').value = fk; $('stat2To').value = tk;
+        return { from: fk, to: tk };
+      }
+
+      function exportChart(id){
+        const canvas = $(id); if(!canvas) return;
+        const card = canvas.closest('.chart-card');
+        const title = card ? (card.querySelector('h4')?.textContent || '') : '';
+        const dpr = window.devicePixelRatio || 1;
+        // Create an export canvas with extra space for title
+        const rect = canvas.getBoundingClientRect();
+        const titleH = title ? 36 : 0;
+        const w = Math.max(1, Math.floor(rect.width));
+        const h = Math.max(1, Math.floor(rect.height + titleH));
+        const out = document.createElement('canvas'); out.width = Math.floor(w*dpr); out.height = Math.floor(h*dpr);
+        const ctx = out.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+        // Background
+        const bg = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#ffffff';
+        ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
+        // Title
+        if (title){ ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111827'; ctx.font = '16px system-ui'; ctx.fillText(title, 8, 22); }
+        // Draw the existing chart canvas below title
+        ctx.drawImage(canvas, 0, titleH, w, rect.height);
+        const png = out.toDataURL('image/png');
+        const a = d.createElement('a'); a.href = png; a.download = `${id}.png`; a.click();
+      }
+
+      function refresh(){
+        if (!state.inited) return;
+        const { from, to } = ensureRange();
+        const hourMode = (state.gran==='hour');
+        const labels = hourMode ? Array.from({length:24},(_,i)=> String(i).padStart(2,'0')) : groupKeys(state.gran, from, to);
+        const S = (window.AppState || window.State || { pain:[], pee:[], fluid:[], settings:{} });
+
+        // Översikt
+        if (state.page==='overview'){
+          if (hourMode){
+            const dayKey = from; // en dags vy
+            const painH = painMedianByHour(S.pain||[], dayKey, 'both');
+            drawLine('ov_pain_trend', labels, painH, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelHour });
+            const peeH = countByHour(S.pee||[], dayKey); const ma = movingAvg(peeH, 3);
+            drawBars('ov_pee_daily', labels, peeH, { label:'Antal', line:{ label:'MA', values:ma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelHour });
+            const flH = fluidByHour(S.fluid||[], dayKey); const maF = movingAvg(flH, 3); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
+            drawBars('ov_fluid_daily', labels, flH, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelHour });
+          } else {
+            const medG = painMedianByGran(S.pain||[], from, to, 'both', state.gran); const painVals = labels.map(k=> medG.get(k)||0);
+            drawLine('ov_pain_trend', labels, painVals, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelForGran });
+            const cMap = countByDay(S.pee||[], from, to); const cG = sumMapByGran(cMap, state.gran); const counts = labels.map(k=>cG.get(k)||0); const ma = movingAvg(counts, maWindow());
+            drawBars('ov_pee_daily', labels, counts, { label:'Antal', line:{ label:`MA`, values:ma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelForGran });
+            const fMap = fluidByDay(S.fluid||[], from, to); const fG = sumMapByGran(fMap, state.gran); const ml = labels.map(k=>fG.get(k)||0); const maF = movingAvg(ml, maWindow()); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
+            drawBars('ov_fluid_daily', labels, ml, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelForGran });
+          }
+        }
+
+        // Smärta
+        if (state.page==='pain'){
+          const typSel = state.painTyp || 'both';
+          if (hourMode){
+            const dayKey = from;
+            const trend = painMedianByHour(S.pain||[], dayKey, typSel);
+            drawLine('p_trend', labels, trend, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelHour });
+            const epis = painEpisodesByHour(S.pain||[], dayKey, typSel);
+            drawBars('p_episodes', labels, epis, { label:'Episoder', labelFormatter: fmtLabelHour });
+            const dur = painDurationByHourApprox(S.pain||[], dayKey, typSel);
+            drawBars('p_duration', labels, dur, { label:'Minuter', labelFormatter: fmtLabelHour });
+            const medsH = painMedsByHour(S.pain||[], dayKey, typSel);
+            drawBars('p_meds', labels, medsH.med, {
+              label:'Meds',
+              line:{ label:'Effekt: ja', values: medsH.ja, color: cssVar('--ok')||'#16a34a' },
+              labelFormatter: fmtLabelHour,
+              tooltipFormatter: (i, lab)=>{
+                return `<b>${lab}</b><br/>ibuprofen: ${medsH.ibuprofen[i]||0}<br/>paracetamol: ${medsH.paracetamol[i]||0}<br/>naproxen: ${medsH.naproxen[i]||0}<br/>övrigt: ${medsH.other[i]||0}<br/>effekt: ja ${medsH.ja[i]||0}`;
+              }
+            });
+          } else {
+            const medG2 = painMedianByGran(S.pain||[], from, to, typSel, state.gran); const trend = labels.map(k=>medG2.get(k)||0);
+            drawLine('p_trend', labels, trend, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelForGran });
+            const epiMap = countPainByDay(S.pain||[], from, to, typSel); const epiG = sumMapByGran(epiMap, state.gran); const epis = labels.map(k=>epiG.get(k)||0);
+            drawBars('p_episodes', labels, epis, { label:'Episoder', labelFormatter: fmtLabelForGran });
+            const durMap = painDurationByDay(S.pain||[], from, to, typSel); const durG = sumMapByGran(durMap, state.gran); const dur = labels.map(k=>durG.get(k)||0);
+            drawBars('p_duration', labels, dur, { label:'Minuter', labelFormatter: fmtLabelForGran });
+            const medsDay = painMedsByDay(S.pain||[], from, to, typSel); const medsAgg = foldMedsToGran(medsDay, state.gran);
+            const arrMed = labels.map(k=> (medsAgg.get(k)||{}).med || 0);
+            const arrJa = labels.map(k=> (medsAgg.get(k)||{}).ja || 0);
+            const arrI = labels.map(k=> (medsAgg.get(k)||{}).ibuprofen || 0);
+            const arrP = labels.map(k=> (medsAgg.get(k)||{}).paracetamol || 0);
+            const arrN = labels.map(k=> (medsAgg.get(k)||{}).naproxen || 0);
+            const arrO = labels.map(k=> (medsAgg.get(k)||{}).other || 0);
+            drawBars('p_meds', labels, arrMed, {
+              label:'Meds',
+              line:{ label:'Effekt: ja', values: arrJa, color: cssVar('--ok')||'#16a34a' },
+              labelFormatter: fmtLabelForGran,
+              tooltipFormatter: (i, lab)=>{
+                return `<b>${lab}</b><br/>ibuprofen: ${arrI[i]||0}<br/>paracetamol: ${arrP[i]||0}<br/>naproxen: ${arrN[i]||0}<br/>övrigt: ${arrO[i]||0}<br/>effekt: ja ${arrJa[i]||0}`;
+              }
+            });
+          }
+        }
+
+        // Kiss
+        if (state.page==='pee'){
+          if (hourMode){
+            const dayKey = from; const counts = countByHour(S.pee||[], dayKey); const ma2 = movingAvg(counts, 3);
+            drawBars('k_daily', labels, counts, { label:'Antal', line:{ label:'MA', values:ma2, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelHour });
+          } else {
+            const cMap2 = countByDay(S.pee||[], from, to); const cG2 = sumMapByGran(cMap2, state.gran); const counts = labels.map(k=>cG2.get(k)||0); const ma2 = movingAvg(counts, maWindow());
+            drawBars('k_daily', labels, counts, { label:'Antal', line:{ label:'MA', values:ma2, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelForGran });
+          }
+          const clock = peeClockHist(S.pee||[], from, to);
+          const maClock = hourMAForLastDays(S.pee||[], to, from, 7);
+          const labelsClock = Array.from({length:24},(_,i)=>`${i}`);
+          // Hour histogram with 7d MA overlay and interactivity
+          const canvas = $('k_clock'); if (canvas){
+            lastData['k_clock'] = { labels: labelsClock, datasets:[{ label:'Antal', data: clock }, { label:'7d MA', data: maClock }] };
+            const { ctx, w, h } = setupCanvas(canvas);
+            const padding = { l: 44, r: 10, t: 12, b: 40 };
+            const plotW = w-padding.l-padding.r, plotH = h-padding.t-padding.b;
+            axis(ctx, padding.l, padding.t, plotW, plotH);
+            const maxY = yTicksInteger(ctx, padding.l, padding.t, plotW, plotH, Math.max(...clock, ...maClock, 1));
+            const barW = Math.max(6, plotW/(24*1.2)); ctx.fillStyle = cssVar('--primary')||'#ec4899';
+            for(let i=0;i<24;i++){ const x=padding.l + i*(barW*1.2); const yv=(clock[i]/maxY)*plotH; const y=padding.t + plotH - yv; ctx.fillRect(x,y,barW,yv); }
+            ctx.fillStyle = cssVar('--muted'); ctx.font='12px system-ui'; ctx.textAlign='center';
+            for(let i=0;i<24;i+=2){ const x=padding.l + i*(barW*1.2) + barW/2; ctx.fillText(String(i), x, h-6); }
+            // 7d MA overlay line
+            ctx.save(); ctx.strokeStyle = cssVar('--accent')||'#a78bfa'; ctx.lineWidth=2; ctx.beginPath();
+            for(let i=0;i<24;i++){ const x=padding.l + i*(barW*1.2) + barW/2; const y=padding.t + plotH - ((maClock[i]/maxY)*plotH); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+            ctx.stroke(); ctx.restore();
+            // Interactivity
+            function hitIndex(mx){ const left=padding.l, right=padding.l+plotW; if(mx<left||mx>right) return null; const step=barW*1.2; const idx=Math.floor((mx-padding.l)/step+0.1); if(idx<0||idx>=24) return null; return idx; }
+            function onMove(ev){ const r=canvas.getBoundingClientRect(); const mx=ev.clientX-r.left; const idx=hitIndex(mx); if(idx==null){ hideTip(); return; } const html = `<b>${fmtLabelHour(idx)}</b><br/>Antal: ${clock[idx]}<br/>7d MA: ${maClock[idx].toFixed(1)}`; showTip(html, ev.clientX, ev.clientY); }
+            canvas.onmousemove = onMove; canvas.onmouseleave = hideTip; canvas.onclick = onMove;
+          }
+        }
+
+        // Vätska
+        if (state.page==='fluid'){
+          if (hourMode){
+            const dayKey = from; const ml = fluidByHour(S.fluid||[], dayKey); const maF = movingAvg(ml, 3); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
+            drawBars('v_daily', labels, ml, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelHour });
+          } else {
+            const fMap2 = fluidByDay(S.fluid||[], from, to); const fG2 = sumMapByGran(fMap2, state.gran); const ml = labels.map(k=>fG2.get(k)||0); const maF = movingAvg(ml, maWindow()); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
+            drawBars('v_daily', labels, ml, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelForGran });
+          }
+          const types = pieTypes(S.fluid||[], from, to);
+          drawPie('v_types', types.labels, types.values);
+        }
+      }
+
+      function bind(){
+        // Presets
+        qall('.stat2-controls [data-preset]').forEach(btn=> btn.addEventListener('click',()=>{
+          qall('.stat2-controls [data-preset]').forEach(b=>b.classList.toggle('active', b===btn));
+          state.rangePreset = btn.dataset.preset; state.from=null; state.to=null; refresh();
+        }));
+        // Dates
+        $('stat2From').addEventListener('change', (e)=>{ state.from = e.target.value||null; refresh(); });
+        $('stat2To').addEventListener('change', (e)=>{ state.to = e.target.value||null; refresh(); });
+        // Granularity + compare (not fully used yet)
+        $('stat2Gran').addEventListener('change', (e)=>{ state.gran = e.target.value; refresh(); });
+        $('stat2Compare').addEventListener('change', (e)=>{ state.compare = !!e.target.checked; refresh(); });
+        // Tabs
+        qall('.stat2-tabs .tab').forEach(tab=> tab.addEventListener('click', ()=>{
+          qall('.stat2-tabs .tab').forEach(t=>t.classList.toggle('active', t===tab));
+          state.page = tab.dataset.page;
+          // show/hide pages
+          $('stat2-overview').hidden = state.page!=='overview';
+          $('stat2-pain').hidden = state.page!=='pain';
+          $('stat2-pee').hidden = state.page!=='pee';
+          $('stat2-fluid').hidden = state.page!=='fluid';
+          // Show pain type filter only on pain page
+          const grp = $('stat2PainType');
+          if (grp) grp.hidden = state.page!=='pain';
+          // Sync active state for pain type chips
+          if (state.page==='pain') {
+            const chips = qall('#stat2PainType [data-paintype]');
+            chips.forEach(c=>c.classList.toggle('active', c.dataset.paintype===state.painTyp));
+          }
+          refresh();
+        }));
+        // Pain type chips
+        qall('#stat2PainType [data-paintype]').forEach(ch=> ch.addEventListener('click', ()=>{
+          state.painTyp = ch.dataset.paintype;
+          qall('#stat2PainType [data-paintype]').forEach(c=>c.classList.toggle('active', c===ch));
+          refresh();
+        }));
+        // Export buttons
+        qall('[data-export]').forEach(b=> b.addEventListener('click', ()=> exportChart(b.getAttribute('data-export'))));
+        // Save view
+        $('stat2Save').addEventListener('click', ()=>{
+          const name = prompt('Namn på vy?'); if(!name) return;
+          const view = { name, page:state.page, preset: state.rangePreset, from: $('stat2From').value, to: $('stat2To').value, gran: state.gran, compare: state.compare };
+          state.views.push(view); localStorage.setItem(storeKey, JSON.stringify(state.views)); renderSavedViews();
+        });
+        $('stat2Reset').addEventListener('click', ()=>{ state.rangePreset='30d'; state.from=null; state.to=null; state.gran='day'; state.compare=false; refresh(); });
+      }
+
+      function renderSavedViews(){
+        const wrap = $('stat2Saved'); wrap.innerHTML='';
+        if(!state.views.length) return;
+        for (const v of state.views){
+          const chip = d.createElement('div'); chip.className='stat2-chip'; chip.setAttribute('role','button'); chip.title='Ladda vy';
+          const span = d.createElement('span'); span.textContent = v.name; chip.appendChild(span);
+          const del = d.createElement('button'); del.className='del'; del.textContent='×'; del.title='Ta bort';
+          del.addEventListener('click', (ev)=>{ ev.stopPropagation(); state.views = state.views.filter(x=>x!==v); localStorage.setItem(storeKey, JSON.stringify(state.views)); renderSavedViews(); });
+          chip.appendChild(del);
+          chip.addEventListener('click', ()=>{ state.page=v.page||'overview'; state.rangePreset=v.preset||'30d'; state.from=v.from||null; state.to=v.to||null; state.gran=v.gran||'day'; state.compare=!!v.compare; // update tabs
+            qall('.stat2-tabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.page===state.page));
+            $('stat2-overview').hidden = state.page!=='overview'; $('stat2-pain').hidden = state.page!=='pain'; $('stat2-pee').hidden = state.page!=='pee'; $('stat2-fluid').hidden = state.page!=='fluid';
+            refresh();
+          });
+          wrap.appendChild(chip);
+        }
+      }
+
+      function loadViews(){ try{ state.views = JSON.parse(localStorage.getItem(storeKey)||'[]')||[]; }catch{ state.views=[]; } renderSavedViews(); }
+
+      function init(){ if(state.inited) return; if(!$('stat2From')) return; bind(); loadViews(); state.inited=true; refresh(); window.addEventListener('resize', ()=>{ if(state.inited) refresh(); }); }
+      function onShow(){ if (!state.inited) init(); else refresh(); }
+
+      window.StatsV2 = { init, onShow, refresh };
     })();
 
     // Starta appen
@@ -2575,7 +3241,7 @@
         }
       }
       function setBarActive(id){
-        ['navHome','navLog','navStats','navSettings'].forEach(x=>{ const el=qs(x); if (el) el.classList.toggle('active', x===id); });
+        ['navHome','navStats','navSettings'].forEach(x=>{ const el=qs(x); if (el) el.classList.toggle('active', x===id); });
       }
       function showDashboard(){ dash.hidden = false; hideAllTabs(); setBarActive('navHome'); }
       function openTab(name){ dash.hidden = true; const btn = qs('tabbtn-'+name); if (btn) btn.click(); setBarActive(name==='stat' ? 'navStats' : null); }
@@ -2590,8 +3256,7 @@
 
       // Bottom-bar
       qs('navHome')?.addEventListener('click', showDashboard);
-      const openQuick = ()=>{ openSheet('quickSheet'); setBarActive('navLog'); };
-      qs('navLog')?.addEventListener('click', openQuick);
+      const openQuick = ()=>{ openSheet('quickSheet'); };
       qs('navStats')?.addEventListener('click', ()=> openTab('stat'));
       qs('navSettings')?.addEventListener('click', ()=> qs('btnSettings')?.click());
       qs('fabQuick')?.addEventListener('click', openQuick);
