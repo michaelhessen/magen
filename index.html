@@ -93,6 +93,7 @@
       --s2: 16px;
       --s3: 24px;
       --rad: 16px;
+      --sheet-actions-h:64px;
     }
     [data-theme="dark"] {
       /* Mörkt läge */
@@ -342,18 +343,21 @@
     /* Bottom sheets */
     .sheet-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.5); display: none; align-items: flex-end; justify-content: center; z-index: 60; }
     .sheet-backdrop.open { display: flex; }
-    .sheet { background: var(--card); color: var(--text); width: 100%; max-width: 720px; max-height: 90vh; border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); box-shadow: var(--shadow-lg); transform: translateY(100%); transition: transform var(--duration) ease; border: 1px solid rgba(100,116,139,0.2); }
+    .sheet { background: var(--card); color: var(--text); width: 100%; max-width: 720px; border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); box-shadow: var(--shadow-lg); transform: translateY(100%); transition: transform var(--duration) ease; border: 1px solid rgba(100,116,139,0.2); display:flex; flex-direction:column; max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
     .sheet.open { transform: translateY(0); }
-    .sheet .sheet-header { position: sticky; top: 0; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
-    .sheet .sheet-body { padding: 12px 16px 80px; overflow-y: auto; overflow-x: hidden; max-height: calc(90vh - 120px); touch-action: pan-y; }
-    .sheet .sheet-actions{
-      position: sticky; bottom: 0;
+    .sheet-header { flex:0 0 auto; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
+    .sheet-body { flex:1 1 auto; overflow:auto; -webkit-overflow-scrolling:touch; padding:16px; }
+    .sheet-actions{
+      flex:0 0 auto;
+      display:flex; gap:10px; justify-content:flex-end; align-items:center;
+      padding:12px 16px calc(12px + env(safe-area-inset-bottom));
       background: var(--card);
-      padding: 12px 0 8px;
-      display:flex; gap:10px; justify-content:flex-end;
+      border-top: 1px solid rgba(100,116,139,.25);
+      box-shadow: 0 -8px 24px rgba(0,0,0,.25);
+      z-index:2;
     }
-    .sheet .sheet-body{ padding-bottom: 88px; } /* luft över tabbar/FAB */
-    .sheet .sheet-body .page{ padding-inline:0; } /* undvik dubbel-padding i sheet */
+    .sheet-actions .btn{ min-height:44px; }
+    .sheet-body .page{ padding-inline:0; } /* undvik dubbel-padding i sheet */
 
     /* Focus visibility */
     :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
@@ -629,7 +633,7 @@
         <div class="spacer"></div>
         <button class="btn ghost" type="button" id="closePainSheet">Stäng</button>
       </div>
-      <main class="sheet-body page">
+      <div class="sheet-body page">
         <form id="painForm" class="form-grid" autocomplete="off">
           <div class="row-date">
             <div class="field-card">
@@ -701,12 +705,12 @@
             <textarea id="painNote" placeholder="Kort notis…"></textarea>
           </div>
 
-          <div class="sheet-actions">
-            <button class="btn ghost" type="button" id="closePainSheet2">Stäng</button>
-            <button class="btn ok" type="submit" title="Lägg till smärtlogg">Lägg till</button>
-          </div>
         </form>
-      </main>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" type="button" id="closePainSheet2">Stäng</button>
+        <button class="btn ok" type="submit" form="painForm" title="Lägg till smärtlogg">Lägg till</button>
+      </div>
     </div>
   </div>
 
@@ -738,9 +742,9 @@
           <button id="btnPeeSetNow" class="btn secondary" type="button">Nu</button>
           <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
         </div>
-        <div class="sheet-actions">
-          <button class="btn ghost" type="button" id="closePeeSheet2">Stäng</button>
-        </div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" type="button" id="closePeeSheet2">Stäng</button>
       </div>
     </div>
   </div>
@@ -783,11 +787,11 @@
             <div class="help">Dagligt mål: <span id="goalMl">2000</span> ml</div>
             <div class="spacer"></div>
           </div>
-          <div class="sheet-actions">
-            <button class="btn ghost" type="button" id="closeFluidSheet2">Stäng</button>
-            <button class="btn ok" type="submit">Lägg till</button>
-          </div>
         </form>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" type="button" id="closeFluidSheet2">Stäng</button>
+        <button class="btn ok" type="submit" form="fluidForm">Lägg till</button>
       </div>
     </div>
   </div>
@@ -805,9 +809,9 @@
           <button class="btn secondary" type="button" id="quickPee">+ Kiss nu</button>
           <button class="btn" type="button" id="quickFluid">+ Vätska</button>
         </div>
-        <div class="sheet-actions">
-          <button class="btn ghost" type="button" id="closeQuickSheet2">Stäng</button>
-        </div>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" type="button" id="closeQuickSheet2">Stäng</button>
       </div>
     </div>
   </div>
