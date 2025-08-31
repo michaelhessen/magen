@@ -136,7 +136,7 @@
 
     /* Layout */
     header.appbar {
-      position: sticky; top: 0; z-index: 30;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 30;
       background: var(--card);
       box-shadow: var(--shadow-sm);
       backdrop-filter: saturate(160%) blur(6px);
@@ -166,7 +166,7 @@
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
     .btn.chip-btn{ padding:8px 12px; border-radius:999px; font-weight:700; }
 
-    main { max-width: 1000px; margin: 10px auto 120px; padding: 0 16px; }
+    main { max-width: 1000px; margin: 0 auto; padding: 70px 16px 120px; }
     .page{ max-width:480px; width:100%; margin-inline:auto; padding-inline:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right)); }
     .section{ width:100%; max-width:100%; padding:16px; border-radius:16px; margin-top:24px; }
     .section.card{ box-sizing:border-box; }
@@ -321,7 +321,7 @@
     @media (min-width: 860px) { .home-grid { grid-template-columns: repeat(4, 1fr); } }
 
     /* Bottom action bar */
-    .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card); box-shadow: 0 -6px 24px rgba(15,23,42,0.12); border-top: 1px solid rgba(100,116,139,0.2); }
+    .bottom-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--card); box-shadow: 0 -6px 24px rgba(15,23,42,0.12); border-top: 1px solid rgba(100,116,139,0.2); padding-bottom: env(safe-area-inset-bottom); }
     .bottom-bar-inner { max-width: 1000px; margin: 0 auto; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .bar-btn { appearance: none; background: transparent; border: 1px solid rgba(100,116,139,0.2); color: var(--text); border-radius: 999px; padding: 14px 10px; font-weight: 700; font-size: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .bar-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
@@ -333,7 +333,7 @@
 
     @media (max-width: 400px) {
       .appbar-inner { padding: 8px 12px; }
-      main { padding: 0 12px; }
+      main { padding: 70px 12px 120px; }
       .card { padding: 12px; }
       .home-card { padding: 14px; }
       .bottom-bar-inner { padding: 12px 12px; }
