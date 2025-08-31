@@ -272,10 +272,43 @@
     .chip:has(input:checked) { background: var(--chip-selected-bg); color: var(--chip-selected-fg); border-color: transparent; }
     .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .form-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    .form-row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
-    @media (max-width: 420px){ .form-row{ grid-template-columns:1fr; } }
-    .field-card{ background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.2); padding:10px; border-radius:12px; }
-    .form-row .btn.secondary{ height:40px; align-self:end; }
+    .row-date{ display:grid; grid-template-columns:1fr; gap:12px; }
+    .row-times{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .row-times > *:only-child{ grid-column:1 / -1; }
+    @media (max-width:380px){ .row-times{ grid-template-columns:1fr; } }
+    .field-card{
+      position:relative;
+      box-sizing:border-box;
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(100,116,139,.25);
+      background:rgba(100,116,139,.08);
+      padding:10px 12px;
+      overflow:hidden;
+    }
+    .field-card input,
+    .field-card select,
+    .field-card textarea{
+      width:100%;
+      display:block;
+      border:0;
+      border-radius:0;
+      outline:none !important;
+      box-shadow:none !important;
+      background:transparent;
+      -webkit-appearance:none;
+      padding:4px 0;
+    }
+    .field-card:focus-within{
+      border-color:var(--accent);
+      box-shadow:inset 0 0 0 2px var(--accent);
+    }
+    .field-card.error{
+      border-color:var(--danger);
+      box-shadow:inset 0 0 0 2px var(--danger);
+    }
+    .form-row, .row-date, .row-times{ min-width:0; }
+    .form-row > *, .row-date > *, .row-times > *{ min-width:0; }
 
     /* Dashboard */
     #dashboard { margin-top: 10px; }
@@ -598,22 +631,24 @@
       </div>
       <main class="sheet-body page">
         <form id="painForm" class="form-grid" autocomplete="off">
-          <div class="form-row">
+          <div class="row-date">
             <div class="field-card">
               <label for="painDate">Datum</label>
               <input id="painDate" type="date" required />
             </div>
+          </div>
+          <div class="row-times">
             <div class="field-card">
               <label for="painStart">Starttid</label>
               <input id="painStart" type="time" step="60" required />
-            </div>
-            <div style="align-self: flex-end;">
-              <button id="btnPainNow" class="btn secondary chip-btn" type="button">Nu</button>
             </div>
             <div class="field-card">
               <label for="painEnd">Sluttid (valfritt)</label>
               <input id="painEnd" type="time" step="60" />
             </div>
+          </div>
+          <div class="row" style="justify-content:flex-end;">
+            <button id="btnPainNow" class="btn secondary chip-btn" type="button">Nu</button>
           </div>
           <div class="row">
             <fieldset style="border:0;padding:0;margin:0; width:100%">
@@ -687,21 +722,21 @@
           <button id="btnPeeNow" class="btn ok" title="Lägg till med aktuell tid" type="button">Lägg till nu</button>
           <div class="spacer"></div>
         </div>
-        <div class="row">
+        <div class="row-date">
           <div class="field-card">
             <label for="peeDate">Datum</label>
             <input id="peeDate" type="date" />
           </div>
+        </div>
+        <div class="row-times">
           <div class="field-card">
             <label for="peeTime">Tid</label>
             <input id="peeTime" type="time" step="60" />
           </div>
-          <div style="align-self: flex-end;">
-            <button id="btnPeeSetNow" class="btn secondary" type="button">Nu</button>
-          </div>
-          <div style="align-self: flex-end;">
-            <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
-          </div>
+        </div>
+        <div class="row" style="justify-content:flex-end; gap:12px; margin-top:12px;">
+          <button id="btnPeeSetNow" class="btn secondary" type="button">Nu</button>
+          <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
         </div>
         <div class="sheet-actions">
           <button class="btn ghost" type="button" id="closePeeSheet2">Stäng</button>
@@ -719,18 +754,20 @@
       </div>
       <div class="sheet-body">
         <form id="fluidForm">
-          <div class="row">
+          <div class="row-date">
             <div class="field-card">
               <label for="fluidDate">Datum</label>
               <input id="fluidDate" type="date" required />
             </div>
+          </div>
+          <div class="row-times">
             <div class="field-card">
               <label for="fluidTime">Tid</label>
               <input id="fluidTime" type="time" step="60" required />
             </div>
-            <div style="align-self: flex-end;">
-              <button id="btnFluidNow" class="btn secondary" type="button">Nu</button>
-            </div>
+          </div>
+          <div class="row" style="justify-content:flex-end; gap:12px;">
+            <button id="btnFluidNow" class="btn secondary" type="button">Nu</button>
           </div>
           <div class="row">
             <div class="field-card">
@@ -1970,10 +2007,12 @@
           const html = `
             <h3>Redigera smärta</h3>
             <form id="editPainForm" data-id="${p.id}">
-              <div class="row">
-                <div><label>Datum</label><input id="epDate" type="date" value="${p.datum}" required></div>
-                <div><label>Starttid</label><input id="epStart" type="time" step="60" value="${p.starttid || p.tid}" required></div>
-                <div><label>Sluttid (valfritt)</label><input id="epEnd" type="time" step="60" value="${p.sluttid || ''}"></div>
+              <div class="row-date">
+                <div class="field-card"><label>Datum</label><input id="epDate" type="date" value="${p.datum}" required></div>
+              </div>
+              <div class="row-times">
+                <div class="field-card"><label>Starttid</label><input id="epStart" type="time" step="60" value="${p.starttid || p.tid}" required></div>
+                <div class="field-card"><label>Sluttid (valfritt)</label><input id="epEnd" type="time" step="60" value="${p.sluttid || ''}"></div>
               </div>
               <div class="row" style="margin-top:6px;">
                 <label><input type="radio" name="epTyp" value="magont" ${p.typ==='magont'?'checked':''}> Magont</label>
