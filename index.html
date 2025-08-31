@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Magen – Smärta, Kiss & Vätska</title>
+  <title>Magen – Smärta, Kiss, Avföring & Vätska</title>
 
   <!-- Ikoner -->
 <link rel="icon" href="favicon.png" sizes="64x64" type="image/png">
@@ -36,6 +36,13 @@
         PeeEntry {
           id: string
           timestamp: string (ISO 8601 lokal)
+        }
+      stoolLogs: Array<StoolEntry>
+        StoolEntry {
+          id: string
+          timestamp: string (ISO 8601 lokal)
+          bristol: 1..7
+          anteckning?: string
         }
       fluidLogs: Array<FluidEntry>
         FluidEntry {
@@ -243,7 +250,7 @@
     footer { max-width: 1000px; margin: 18px auto 80px; padding: 0 16px; color: var(--muted); font-size: 12px; }
 
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(2,6,23,0.5); display: none; align-items: center; justify-content: center; z-index: 50;
+      position: fixed; inset: 0; background: rgba(2,6,23,0.5); display: none; align-items: center; justify-content: center; z-index: 80; /* över sheets (z=60) */
     }
     .modal { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 14px; max-width: 720px; width: calc(100% - 24px); border: 1px solid rgba(100,116,139,0.2); max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .modal h3 { margin-top: 0; }
@@ -424,6 +431,10 @@
           <div class="big">🚻 Kiss</div>
           <div class="meta">Snabbt "nu" eller vald tid</div>
         </div>
+        <div class="home-card" id="cardStool" role="button" tabindex="0" aria-label="Öppna Avföring">
+          <div class="big">💩 Avföring</div>
+          <div class="meta">Logga enligt Bristol, med anteckning</div>
+        </div>
         <div class="home-card" id="cardFluid" role="button" tabindex="0" aria-label="Öppna Vätska">
           <div class="big">💧 Vätska</div>
           <div class="meta">Följ intag och mål</div>
@@ -435,10 +446,72 @@
       </div>
     </section>
 
+    <!-- Avföring -->
+    <section id="tab-avforing" role="tabpanel" aria-labelledby="tabbtn-avforing" hidden>
+      <div class="grid grid-2">
+        <div class="card soft">
+          <h3>Snabb avföring</h3>
+          <div class="hero">
+            <div class="emoji">💩</div>
+            <div class="help">Tryck för att registrera nu, eller planera tid.</div>
+            <div class="row" style="gap:8px; justify-content:flex-end;">
+              <button id="stoolQuickNow" class="btn ok" type="button">Lägg till nu</button>
+              <button id="openStoolSheet" class="btn" type="button">Planera</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Information</h3>
+          <div class="help">Bristolskalan (1–7) beskriver form/konsistens. <button id="btnBristolInfo" class="btn ghost" type="button">Läs mer</button></div>
+        </div>
+      </div>
+      <section class="section card">
+        <details>
+          <summary>Filter</summary>
+          <form id="stoolFilters" style="margin-top:10px;">
+            <div class="row">
+              <div>
+                <label for="sfFrom">Från</label>
+                <input id="sfFrom" type="date" />
+              </div>
+              <div>
+                <label for="sfTo">Till</label>
+                <input id="sfTo" type="date" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Bristol-typ</label>
+                <div class="row" style="gap:8px;">
+                  <label><input type="checkbox" id="sfB1" checked /> 1</label>
+                  <label><input type="checkbox" id="sfB2" checked /> 2</label>
+                  <label><input type="checkbox" id="sfB3" checked /> 3</label>
+                  <label><input type="checkbox" id="sfB4" checked /> 4</label>
+                  <label><input type="checkbox" id="sfB5" checked /> 5</label>
+                  <label><input type="checkbox" id="sfB6" checked /> 6</label>
+                  <label><input type="checkbox" id="sfB7" checked /> 7</label>
+                </div>
+              </div>
+              <div class="row" style="align-items: flex-end;">
+                <button class="btn ghost" id="sfBtnClr" type="button">Nollställ</button>
+                <button class="btn" id="sfBtnApply" type="button">Använd</button>
+              </div>
+            </div>
+          </form>
+        </details>
+      </section>
+      <div class="card" style="margin-top:10px;">
+        <h3>Lista</h3>
+        <div id="stoolList" class="list-group" aria-live="polite"></div>
+        <div id="stoolEmpty" class="muted" hidden>Inget registrerat ännu. Tryck "Lägg till nu".</div>
+      </div>
+    </section>
+
     <nav class="tabs" aria-label="Flikar" hidden aria-hidden="true">
       <div class="tablist" role="tablist">
         <button class="btn tab-active" role="tab" aria-selected="true" aria-controls="tab-smarta" id="tabbtn-smarta">Smärta</button>
         <button class="btn" role="tab" aria-selected="false" aria-controls="tab-kiss" id="tabbtn-kiss">Kiss</button>
+        <button class="btn" role="tab" aria-selected="false" aria-controls="tab-avforing" id="tabbtn-avforing">Avföring</button>
         <button class="btn" role="tab" aria-selected="false" aria-controls="tab-vatska" id="tabbtn-vatska">Vätska</button>
         <button class="btn" role="tab" aria-selected="false" aria-controls="tab-stat" id="tabbtn-stat">Statistik</button>
       </div>
@@ -634,6 +707,7 @@
           <button class="tab active" role="tab" aria-selected="true" data-page="overview">Översikt</button>
           <button class="tab" role="tab" aria-selected="false" data-page="pain">Smärta</button>
           <button class="tab" role="tab" aria-selected="false" data-page="pee">Kiss</button>
+          <button class="tab" role="tab" aria-selected="false" data-page="stool">Avföring</button>
           <button class="tab" role="tab" aria-selected="false" data-page="fluid">Vätska</button>
         </div>
         <div id="stat2PainType" class="stat2-row" style="gap:6px; margin-top:6px;" hidden>
@@ -660,6 +734,13 @@
               <canvas id="ov_pee_daily"></canvas>
               <div class="chart-actions">
                 <button class="btn-sm" data-export="ov_pee_daily">Exportera</button>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h4>Avföring – antal per dag + 7d-MA</h4>
+              <canvas id="ov_stool_daily"></canvas>
+              <div class="chart-actions">
+                <button class="btn-sm" data-export="ov_stool_daily">Exportera</button>
               </div>
             </div>
             <div class="chart-card">
@@ -714,6 +795,27 @@
           </div>
         </section>
 
+        <!-- Avföring -->
+        <section id="stat2-stool" aria-label="Avföring" hidden>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Antal per period + MA</h4>
+              <canvas id="s_daily"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="s_daily">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Bristol (medel per period)</h4>
+              <canvas id="s_bristol_avg"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="s_bristol_avg">Exportera</button></div>
+            </div>
+            <div class="chart-card">
+              <h4>Bristol (fördelning)</h4>
+              <canvas id="s_bristol_types"></canvas>
+              <div class="chart-actions"><button class="btn-sm" data-export="s_bristol_types">Exportera</button></div>
+            </div>
+          </div>
+        </section>
+
         <!-- Vätska -->
         <section id="stat2-fluid" aria-label="Vätska" hidden>
           <div class="chart-grid">
@@ -745,6 +847,59 @@
       <div id="modalContent"></div>
       <div class="row" style="margin-top:12px; justify-content: flex-end;">
         <button class="btn ghost" id="modalClose">Stäng</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stoolSheet" class="sheet-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="sheet" role="document">
+      <div class="sheet-header">
+        <strong>Registrera avföring</strong>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" id="closeStoolSheet">Stäng</button>
+      </div>
+      <div class="sheet-body">
+        <form id="stoolForm" class="form-grid">
+          <div class="row" style="justify-content:flex-end; gap:12px;">
+            <button id="btnStoolNow" class="btn secondary" type="button">Nu</button>
+            <button id="btnBristolInfo2" class="btn ghost" type="button" title="Visa information om Bristolskalan">ℹ️ Om Bristol</button>
+          </div>
+          <div class="row-date">
+            <div class="field-card">
+              <label for="stoolDate">Datum</label>
+              <input id="stoolDate" type="date" />
+            </div>
+          </div>
+          <div class="row-times">
+            <div class="field-card">
+              <label for="stoolTime">Tid</label>
+              <input id="stoolTime" type="time" step="60" />
+            </div>
+          </div>
+          <div class="field-card">
+            <label>Bristol (1–7)</label>
+            <div id="stoolBristolGroup" class="chip-group" role="radiogroup" aria-label="Bristolskalan">
+              <label class="chip"><input type="radio" name="stoolBristol" value="1"><span>1</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="2"><span>2</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="3"><span>3</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="4" checked><span>4</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="5"><span>5</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="6"><span>6</span></label>
+              <label class="chip"><input type="radio" name="stoolBristol" value="7"><span>7</span></label>
+            </div>
+            <div class="help">Klicka ℹ️ för beskrivningar enligt Bristolskalan.</div>
+          </div>
+          <div class="field-card">
+            <label for="stoolNote">Anteckning (valfritt)</label>
+            <textarea id="stoolNote" placeholder="Kort notis…"></textarea>
+          </div>
+          <div class="row" style="justify-content:flex-end; gap:12px;">
+            <button id="btnStoolAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
+          </div>
+        </form>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn ghost" type="button" id="closeStoolSheet2">Stäng</button>
       </div>
     </div>
   </div>
@@ -931,6 +1086,7 @@
         <div class="grid">
           <button class="btn ok" type="button" id="quickPain">+ Smärta</button>
           <button class="btn secondary" type="button" id="quickPee">+ Kiss nu</button>
+          <button class="btn" type="button" id="quickStool">+ Avföring nu</button>
           <button class="btn" type="button" id="quickFluid">+ Vätska</button>
         </div>
       </div>
@@ -971,6 +1127,7 @@
           version: 'storage.version',
           pain: 'painLogs',
           pee: 'peeLogs',
+          stool: 'stoolLogs',
           fluid: 'fluidLogs',
           settings: 'settings',
           firstRunShown: 'firstRunShown'
@@ -1061,6 +1218,7 @@
             await idbSetRaw(KEYS.version, '1');
             await set(KEYS.pain, []);
             await set(KEYS.pee, []);
+            await set(KEYS.stool, []);
             await set(KEYS.fluid, []);
             await set(KEYS.settings, defaultSettings());
           } else {
@@ -1071,6 +1229,7 @@
             await set(KEYS.settings, settings);
             if (!Array.isArray(await get(KEYS.pain))) await set(KEYS.pain, []);
             if (!Array.isArray(await get(KEYS.pee))) await set(KEYS.pee, []);
+            if (!Array.isArray(await get(KEYS.stool))) await set(KEYS.stool, []);
             if (!Array.isArray(await get(KEYS.fluid))) await set(KEYS.fluid, []);
           }
         }
@@ -1084,6 +1243,7 @@
             version: (await idbGetRaw(KEYS.version)) || '1',
             pain: await get(KEYS.pain) || [],
             pee: await get(KEYS.pee) || [],
+            stool: await get(KEYS.stool) || [],
             fluid: await get(KEYS.fluid) || [],
             settings: await get(KEYS.settings) || defaultSettings(),
             firstRunShown: await get(KEYS.firstRunShown) === true
@@ -1093,6 +1253,7 @@
         async function saveAll(state) {
           await set(KEYS.pain, state.pain);
           await set(KEYS.pee, state.pee);
+          await set(KEYS.stool, state.stool);
           await set(KEYS.fluid, state.fluid);
           await set(KEYS.settings, state.settings);
         }
@@ -1103,6 +1264,7 @@
           try {
             await idbRemove(KEYS.pain);
             await idbRemove(KEYS.pee);
+            await idbRemove(KEYS.stool);
             await idbRemove(KEYS.fluid);
             await idbRemove(KEYS.settings);
             await migrateIfNeeded();
@@ -1223,6 +1385,7 @@
           pain: ['id','datetimeISO','datum','tid','typ','niva','meds','med_effekt','med_effekt_minuter','anteckning','starttid','sluttid'],
           pain_legacy: ['id','datetimeISO','datum','tid','typ','niva','meds','med_effekt','med_effekt_minuter','anteckning'],
           pee: ['id','datetimeISO'],
+          stool: ['id','datetimeISO','bristol','anteckning'],
           fluid: ['id','datetimeISO','volym_ml','dryck']
         };
 
@@ -1255,6 +1418,15 @@
             lines.push(row.join(','));
           }
           return lines.join('\n') + '\n';
+        }
+
+        function exportStool(arr) {
+          const lines = [HEADERS.stool.join(',')];
+          for (const it of (arr||[])) {
+            const note = Utils.escCsv((it.anteckning||''));
+            lines.push([it.id, it.timestamp, it.bristol ?? '', note].join(','));
+          }
+          return lines.join('\n');
         }
         function exportPee(arr) {
           const lines = [HEADERS.pee.join(',')];
@@ -1384,6 +1556,26 @@
           return res;
         }
 
+        function importStool(text) {
+          const rows = parseCSVText(text).filter(r=>r.length && r.some(c=>c!==''));
+          if (!rows.length) throw new Error('Tom fil.');
+          const delimiter = detectDelimiter(rows[0].join(','));
+          const header = rows[0];
+          if (!validateHeaders(header, 'stool', delimiter)) throw new Error('Fel rubriker i avförings-CSV.');
+          const res = [];
+          for (let i=1;i<rows.length;i++) {
+            let r = rows[i];
+            if (r.length > HEADERS.stool.length) { const joined = r.join(','); r = joined.split(delimiter).map(x=>x.trim()); }
+            if (r.length !== HEADERS.stool.length) throw new Error(`Rad ${i+1}: fel antal kolumner.`);
+            const [id, iso, bristol, anteckning] = r;
+            const b = Number.parseInt(bristol,10); if (!(b>=1 && b<=7)) throw new Error(`Rad ${i+1}: bristol 1–7.`);
+            const idFinal = (State.stool.some(s=>s.id===id)) ? Utils.newUUID() : id;
+            const noteFinal = (anteckning||'').trim();
+            res.push({ id: idFinal, timestamp: iso, bristol: b, anteckning: noteFinal });
+          }
+          return res;
+        }
+
         function importFluid(text) {
           const rows = parseCSVText(text).filter(r=>r.length && r.some(c=>c!==''));
           if (!rows.length) throw new Error('Tom fil.');
@@ -1404,7 +1596,7 @@
           return res;
         }
 
-        return { download, exportPain, exportPee, exportFluid, exportSettings, importPain, importPee, importFluid, importSettings, HEADERS };
+        return { download, exportPain, exportPee, exportStool, exportFluid, exportSettings, importPain, importPee, importStool, importFluid, importSettings, HEADERS };
 
       })();
 
@@ -1825,12 +2017,14 @@
           els.tabBtns = {
             smarta: document.getElementById('tabbtn-smarta'),
             kiss: document.getElementById('tabbtn-kiss'),
+            avforing: document.getElementById('tabbtn-avforing'),
             vatska: document.getElementById('tabbtn-vatska'),
             stat: document.getElementById('tabbtn-stat')
           };
           els.tabs = {
             smarta: document.getElementById('tab-smarta'),
             kiss: document.getElementById('tab-kiss'),
+            avforing: document.getElementById('tab-avforing'),
             vatska: document.getElementById('tab-vatska'),
             stat: document.getElementById('tab-stat')
           };
@@ -1872,6 +2066,31 @@
           els.peeTime = document.getElementById('peeTime');
           els.peeList = document.getElementById('peeList');
           els.peeEmpty = document.getElementById('peeEmpty');
+
+          // stool
+          els.btnStoolNow = document.getElementById('btnStoolNow');
+          els.btnStoolAdd = document.getElementById('btnStoolAdd');
+          els.btnStoolSetNow = document.getElementById('btnStoolNow');
+          els.btnBristolInfo = document.getElementById('btnBristolInfo');
+          els.btnBristolInfo2 = document.getElementById('btnBristolInfo2');
+          els.stoolDate = document.getElementById('stoolDate');
+          els.stoolTime = document.getElementById('stoolTime');
+          els.stoolList = document.getElementById('stoolList');
+          els.stoolEmpty = document.getElementById('stoolEmpty');
+          els.stoolNote = document.getElementById('stoolNote');
+          els.stoolFilters = {
+            from: document.getElementById('sfFrom'),
+            to: document.getElementById('sfTo'),
+            b1: document.getElementById('sfB1'),
+            b2: document.getElementById('sfB2'),
+            b3: document.getElementById('sfB3'),
+            b4: document.getElementById('sfB4'),
+            b5: document.getElementById('sfB5'),
+            b6: document.getElementById('sfB6'),
+            b7: document.getElementById('sfB7'),
+            btnApply: document.getElementById('sfBtnApply'),
+            btnClr: document.getElementById('sfBtnClr'),
+          };
 
           // fluid
           els.fluidForm = document.getElementById('fluidForm');
@@ -1922,6 +2141,13 @@
           els.btnPeeNow.addEventListener('click', addPeeNow);
           els.btnPeeAdd.addEventListener('click', addPeeCustom);
           if (els.btnPeeSetNow) els.btnPeeSetNow.addEventListener('click', ()=>{ setNow(els.peeDate, els.peeTime); delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty; });
+          // stool
+          if (els.btnStoolNow) els.btnStoolNow.addEventListener('click', addStoolNow);
+          if (els.btnStoolAdd) els.btnStoolAdd.addEventListener('click', addStoolCustom);
+          if (els.btnBristolInfo) els.btnBristolInfo.addEventListener('click', openBristolInfo);
+          if (els.btnBristolInfo2) els.btnBristolInfo2.addEventListener('click', openBristolInfo);
+          if (els.stoolFilters?.btnApply) els.stoolFilters.btnApply.addEventListener('click', applyStoolFilters);
+          if (els.stoolFilters?.btnClr) els.stoolFilters.btnClr.addEventListener('click', resetStoolFilters);
           // fluid
           els.fluidForm.addEventListener('submit', onFluidSubmit);
           if (els.btnFluidNow) els.btnFluidNow.addEventListener('click', ()=>{ setNow(els.fluidDate, els.fluidTime); delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty; });
@@ -1931,14 +2157,16 @@
           // snackbar undo
           els.snackUndo.addEventListener('click', undoDelete);
           function markDirtyPair(d,t){ d.dataset.dirty='1'; t.dataset.dirty='1'; }
-          [els.painDate, els.painStart].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.painDate, els.painStart)));
-          [els.peeDate, els.peeTime].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.peeDate, els.peeTime)));
-          [els.fluidDate, els.fluidTime].forEach(el=> el.addEventListener('input', ()=>markDirtyPair(els.fluidDate, els.fluidTime)));
+          [els.painDate, els.painStart].forEach(el=> el?.addEventListener('input', ()=>markDirtyPair(els.painDate, els.painStart)));
+          [els.peeDate, els.peeTime].forEach(el=> el?.addEventListener('input', ()=>markDirtyPair(els.peeDate, els.peeTime)));
+          [els.stoolDate, els.stoolTime].forEach(el=> el?.addEventListener('input', ()=>markDirtyPair(els.stoolDate, els.stoolTime)));
+          [els.fluidDate, els.fluidTime].forEach(el=> el?.addEventListener('input', ()=>markDirtyPair(els.fluidDate, els.fluidTime)));
           // resize charts
           window.addEventListener('resize', Charts.onResize);
           window.addEventListener('focus', ()=> {
             if (!els.painDate.dataset.dirty && !els.painStart.dataset.dirty) setNow(els.painDate, els.painStart);
             if (!els.peeDate.dataset.dirty && !els.peeTime.dataset.dirty) setNow(els.peeDate, els.peeTime);
+            if (!els.stoolDate.dataset?.dirty && !els.stoolTime.dataset?.dirty) setNow(els.stoolDate, els.stoolTime);
             if (!els.fluidDate.dataset.dirty && !els.fluidTime.dataset.dirty) setNow(els.fluidDate, els.fluidTime);
           });
         }
@@ -1957,9 +2185,11 @@
           setNow(els.painDate, els.painStart); els.painEnd.value = '';
           setNow(els.fluidDate, els.fluidTime); els.goalMl.textContent = String(State.settings.vatska_mal_ml);
           setNow(els.peeDate, els.peeTime);
+          if (els.stoolDate && els.stoolTime) setNow(els.stoolDate, els.stoolTime);
           delete els.painDate.dataset.dirty; delete els.painStart.dataset.dirty;
           delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty;
           delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty;
+          if (els.stoolDate && els.stoolTime) { delete els.stoolDate.dataset.dirty; delete els.stoolTime.dataset.dirty; }
           updateScaleText();
 
           if (!State.firstRunShown) {
@@ -2271,6 +2501,7 @@
           const { type, item } = State.lastDeleted;
           if (type==='pain') State.pain.push(item);
           else if (type==='pee') State.pee.push(item);
+          else if (type==='stool') State.stool.push(item);
           else if (type==='fluid') State.fluid.push(item);
           State.lastDeleted = null;
           Storage.saveAll(State); renderAll(); Charts.rebuildAll(); announce('Återställd.');
@@ -2320,6 +2551,80 @@
           State.lastDeleted = { type:'pee', item: removed }; Storage.saveAll(State); renderPeeList(); Charts.rebuildAll(); showSnack('Raderad.');
         }
 
+        // Stool (Avföring)
+        function addStoolNow() {
+          const now = new Date(); now.setSeconds(0,0);
+          const iso = Utils.toLocalISO(now);
+          const b = getSelectedBristol();
+          const note = (els.stoolNote?.value||'').trim();
+          State.stool.unshift({ id: Utils.newUUID(), timestamp: iso, bristol: b, anteckning: note });
+          Storage.saveAll(State); renderStoolList(); announce('Avföring sparad.'); showToast('Avföring registrerad');
+          if (els.stoolDate && els.stoolTime) { setNow(els.stoolDate, els.stoolTime); delete els.stoolDate.dataset.dirty; delete els.stoolTime.dataset.dirty; }
+        }
+        function addStoolCustom() {
+          const d = els.stoolDate?.value; const t = els.stoolTime?.value; if (!d || !t) { announce('Välj datum och tid.'); return; }
+          const iso = Utils.toLocalISO(Utils.fromDateTimeStrings(d,t));
+          const b = getSelectedBristol();
+          const note = (els.stoolNote?.value||'').trim();
+          State.stool.unshift({ id: Utils.newUUID(), timestamp: iso, bristol: b, anteckning: note });
+          Storage.saveAll(State); renderStoolList(); announce('Avföring sparad.'); showToast('Avföring registrerad');
+          if (els.stoolDate && els.stoolTime) { setNow(els.stoolDate, els.stoolTime); delete els.stoolDate.dataset.dirty; delete els.stoolTime.dataset.dirty; }
+        }
+        function getSelectedBristol(){
+          const r = document.querySelector('input[name="stoolBristol"]:checked');
+          const v = parseInt(r?.value||'4',10); return (v>=1&&v<=7)?v:4;
+        }
+        function filteredStool(){
+          const f = State.stoolFilters || { from:'', to:'', b:[true,true,true,true,true,true,true] };
+          return (State.stool||[]).filter(it=>{
+            const d = (it.timestamp||'').split('T')[0];
+            if (f.from && d < f.from) return false;
+            if (f.to && d > f.to) return false;
+            const b = parseInt(it.bristol,10); if (!f.b[b-1]) return false;
+            return true;
+          });
+        }
+        function renderStoolList() {
+          const list = els.stoolList; if (!list) return; list.innerHTML = '';
+          const arr = filteredStool().slice().sort((a,b)=>b.timestamp.localeCompare(a.timestamp));
+          if (!arr.length) { if (els.stoolEmpty) els.stoolEmpty.hidden=false; return; } else if (els.stoolEmpty) els.stoolEmpty.hidden=true;
+          const byDay = Utils.groupBy(arr, it=>Utils.splitISO(it.timestamp).datum);
+          const days = Array.from(byDay.keys()).sort((a,b)=>b.localeCompare(a));
+          for (const d of days) {
+            const wrap = document.createElement('div'); wrap.className='list-day';
+            const head = document.createElement('div'); head.className='day-head'; head.textContent = `${Utils.formatDate(d)} (${d})`;
+            wrap.appendChild(head);
+            const items = byDay.get(d);
+            for (const it of items) {
+              const div = document.createElement('div'); div.className='item'; div.setAttribute('data-id', it.id);
+              const { tid } = Utils.splitISO(it.timestamp);
+              const left = document.createElement('div'); left.innerHTML = `<div><b>💩 ${tid}</b> • Bristol ${it.bristol}${it.anteckning? ' — '+it.anteckning:''}</div><div class="meta">${d}</div>`;
+              const right = document.createElement('div'); right.className='actions';
+              const btnDel = buttonSmall('Ta bort', 'danger', ()=>{ deleteStool(it.id); });
+              right.append(btnDel); div.append(left,right); wrap.appendChild(div);
+            }
+            list.appendChild(wrap);
+          }
+        }
+        function applyStoolFilters(){
+          const f = State.stoolFilters;
+          f.from = els.stoolFilters.from.value || '';
+          f.to = els.stoolFilters.to.value || '';
+          f.b = [els.stoolFilters.b1.checked, els.stoolFilters.b2.checked, els.stoolFilters.b3.checked, els.stoolFilters.b4.checked, els.stoolFilters.b5.checked, els.stoolFilters.b6.checked, els.stoolFilters.b7.checked];
+          renderStoolList(); if (window.StatsV2 && typeof window.StatsV2.refresh==='function') window.StatsV2.refresh();
+        }
+        function resetStoolFilters(){
+          const f = State.stoolFilters;
+          f.from=''; f.to=''; f.b=[true,true,true,true,true,true,true];
+          els.stoolFilters.from.value=''; els.stoolFilters.to.value='';
+          [els.stoolFilters.b1,els.stoolFilters.b2,els.stoolFilters.b3,els.stoolFilters.b4,els.stoolFilters.b5,els.stoolFilters.b6,els.stoolFilters.b7].forEach(el=>{ if (el) el.checked=true; });
+          renderStoolList(); if (window.StatsV2 && typeof window.StatsV2.refresh==='function') window.StatsV2.refresh();
+        }
+        function deleteStool(id) {
+          const idx = (State.stool||[]).findIndex(x=>x.id===id); if (idx<0) return; const removed = State.stool.splice(idx,1)[0];
+          State.lastDeleted = { type:'stool', item: removed }; Storage.saveAll(State); renderStoolList(); showSnack('Raderad.');
+        }
+
         // Fluid
         function onFluidSubmit(e) {
           e.preventDefault();
@@ -2365,6 +2670,25 @@
           State.lastDeleted = { type:'fluid', item: removed }; Storage.saveAll(State); renderFluidList(); Charts.rebuildAll(); showSnack('Raderad.');
         }
 
+        function openBristolInfo() {
+          const html = `
+            <h3>Bristolskalan (1–7)</h3>
+            <div class="grid">
+              <div class="card" style="background:transparent;box-shadow:none;border:1px solid rgba(100,116,139,0.2)">
+                <div class="section-title">Typer</div>
+                <div>1 – Separata hårda klumpar, som nötter</div>
+                <div>2 – Korvformad men knölig</div>
+                <div>3 – Korvformad med sprickor på ytan</div>
+                <div>4 – Korv- eller ormlik, slät och mjuk</div>
+                <div>5 – Mjuka klumpar med tydliga kanter</div>
+                <div>6 – Fluffiga bitar med fransiga kanter, mosig</div>
+                <div>7 – Vattnig, helt flytande, utan fasta delar</div>
+              </div>
+              <div class="help">1–2 tenderar mot förstoppning, 3–4 anses normala, 5–7 tenderar mot diarré.</div>
+            </div>`;
+          openModal(html);
+        }
+
         // Export/Import/Settings modaler
         function openExportModal() {
           const html = `
@@ -2373,22 +2697,25 @@
               <div class="row">
                 <button class="btn" id="exPain">Exportera smärta</button>
                 <button class="btn" id="exPee">Exportera kiss</button>
+                <button class="btn" id="exStool">Exportera avföring</button>
                 <button class="btn" id="exFluid">Exportera vätska</button>
                 <button class="btn" id="exSettings">Exportera inställningar</button>
               </div>
               <div class="row">
-                <button class="btn secondary" id="exAll">Exportera alla (4 filer)</button>
+                <button class="btn secondary" id="exAll">Exportera alla (5 filer)</button>
               </div>
-              <div class="help">Smärta/kiss/vätska exporteras som CSV. Inställningar exporteras som JSON.</div>
+              <div class="help">Smärta/kiss/avföring/vätska exporteras som CSV. Inställningar exporteras som JSON.</div>
             </div>`;
           openModal(html);
           document.getElementById('exPain').addEventListener('click', ()=>{ CSV.download('smarta.csv', CSV.exportPain(State.pain)); });
           document.getElementById('exPee').addEventListener('click', ()=>{ CSV.download('kiss.csv', CSV.exportPee(State.pee)); });
+          document.getElementById('exStool').addEventListener('click', ()=>{ CSV.download('avforing.csv', CSV.exportStool(State.stool)); });
           document.getElementById('exFluid').addEventListener('click', ()=>{ CSV.download('vatska.csv', CSV.exportFluid(State.fluid)); });
           document.getElementById('exSettings').addEventListener('click', ()=>{ CSV.download('settings.json', CSV.exportSettings(State.settings), 'application/json'); });
           document.getElementById('exAll').addEventListener('click', ()=>{
             CSV.download('smarta.csv', CSV.exportPain(State.pain));
             CSV.download('kiss.csv', CSV.exportPee(State.pee));
+            CSV.download('avforing.csv', CSV.exportStool(State.stool));
             CSV.download('vatska.csv', CSV.exportFluid(State.fluid));
             CSV.download('settings.json', CSV.exportSettings(State.settings), 'application/json');
           });
@@ -2407,6 +2734,10 @@
                 <input type="file" id="impPee" accept=".csv,text/csv" />
               </div>
               <div class="card" style="background:transparent;box-shadow:none;border:1px dashed rgba(100,116,139,0.3)">
+                <div class="section-title">Avföring</div>
+                <input type="file" id="impStool" accept=".csv,text/csv" />
+              </div>
+              <div class="card" style="background:transparent;box-shadow:none;border:1px dashed rgba(100,116,139,0.3)">
                 <div class="section-title">Vätska</div>
                 <input type="file" id="impFluid" accept=".csv,text/csv" />
               </div>
@@ -2414,7 +2745,7 @@
                 <div class="section-title">Inställningar</div>
                 <input type="file" id="impSettings" accept=".json,application/json" />
               </div>
-              <div class="help">CSV-filer kan använda komma eller semikolon. För smärta ska rubriker vara: id,datetimeISO,datum,tid,typ,niva,meds,med_effekt,med_effekt_minuter,anteckning,starttid,sluttid</div>
+              <div class="help">CSV-filer kan använda komma eller semikolon. För smärta: id,datetimeISO,datum,tid,typ,niva,meds,med_effekt,med_effekt_minuter,anteckning,starttid,sluttid. För avföring: id,datetimeISO,bristol,anteckning.</div>
               <div id="importLog" class="muted"></div>
             </div>`;
           openModal(html);
@@ -2440,6 +2771,10 @@
           document.getElementById('impPee').addEventListener('change', async (e)=>{
             try { const text = await readFile(e.target); if (!text) return; const rows = CSV.importPee(text); for (const r of rows) State.pee.push(r); Storage.saveAll(State); renderPeeList(); Charts.rebuildAll(); announce(`Importerade ${rows.length} kissloggar.`); appendLog(`Kiss: ${rows.length} rader importerade.`); }
             catch(err){ appendLog(`<span style='color:var(--danger)'>Kiss: ${err.message}</span>`);} e.target.value='';
+          });
+          document.getElementById('impStool').addEventListener('change', async (e)=>{
+            try { const text = await readFile(e.target); if (!text) return; const rows = CSV.importStool(text); for (const r of rows) State.stool.push(r); Storage.saveAll(State); renderStoolList(); announce(`Importerade ${rows.length} avföringsloggar.`); appendLog(`Avföring: ${rows.length} rader importerade.`); }
+            catch(err){ appendLog(`<span style='color:var(--danger)'>Avföring: ${err.message}</span>`);} e.target.value='';
           });
           document.getElementById('impFluid').addEventListener('change', async (e)=>{
             try { const text = await readFile(e.target); if (!text) return; const rows = CSV.importFluid(text); for (const r of rows) State.fluid.push(r); Storage.saveAll(State); renderFluidList(); Charts.rebuildAll(); announce(`Importerade ${rows.length} vätskeposter.`); appendLog(`Vätska: ${rows.length} rader importerade.`); }
@@ -2639,7 +2974,7 @@
           const c1 = document.getElementById('c1'); const c2 = document.getElementById('c2'); const btn = document.getElementById('btnDoClear');
           function upd(){ btn.disabled = !(c1.checked && c2.value.trim().toUpperCase()==='RADERA'); }
           c1.addEventListener('change', upd); c2.addEventListener('input', upd); upd();
-          btn.addEventListener('click', ()=>{ Storage.clearAll(); State.pain=[]; State.pee=[]; State.fluid=[]; State.settings = Storage.defaultSettings(); applyTheme(State.settings.tema); closeModal(); renderAll(); Charts.rebuildAll(); announce('All data rensad.'); });
+          btn.addEventListener('click', ()=>{ Storage.clearAll(); State.pain=[]; State.pee=[]; State.stool=[]; State.fluid=[]; State.settings = Storage.defaultSettings(); applyTheme(State.settings.tema); closeModal(); renderAll(); Charts.rebuildAll(); announce('All data rensad.'); });
         }
 
         function activateTab(name) {
@@ -2653,6 +2988,8 @@
             if (!els.painDate.dataset.dirty && !els.painStart.dataset.dirty) setNow(els.painDate, els.painStart);
           } else if (name==='kiss') {
             if (!els.peeDate.dataset.dirty && !els.peeTime.dataset.dirty) setNow(els.peeDate, els.peeTime);
+          } else if (name==='avforing') {
+            if (els.stoolDate && els.stoolTime && !els.stoolDate.dataset.dirty && !els.stoolTime.dataset.dirty) setNow(els.stoolDate, els.stoolTime);
           } else if (name==='vatska') {
             if (!els.fluidDate.dataset.dirty && !els.fluidTime.dataset.dirty) setNow(els.fluidDate, els.fluidTime);
           } else if (name==='stat') {
@@ -2667,7 +3004,7 @@
         }
 
         function renderAll() {
-          renderPainList(); renderPeeList(); renderFluidList();
+          renderPainList(); renderPeeList(); renderStoolList(); renderFluidList();
         }
 
         function announce(msg) { els.live.textContent = msg; }
@@ -2680,10 +3017,12 @@
         State = {
           pain: s.pain,
           pee: s.pee,
+          stool: s.stool,
           fluid: s.fluid,
           settings: s.settings,
           firstRunShown: s.firstRunShown,
           filters: { from: '', to: '', magont: true, livmoder: true, min: 1, max: 10, meds: 'alla', effekt: 'alla', sok: '' },
+          stoolFilters: { from: '', to: '', b: [true,true,true,true,true,true,true] },
           lastDeleted: null,
           statPain: 'both',
         };
@@ -2758,6 +3097,7 @@
       }
 
       function parseISODateKey(iso){ return (iso||'').split('T')[0]; }
+      function keyFromLocalDate(d){ const yyyy=d.getFullYear(); const mm=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${yyyy}-${mm}-${dd}`; }
       function clampRange(from,to){ if (from && to && from>to) { const t=from; from=to; to=t; } return [from,to]; }
       function daysBetween(from,to){ const arr=[]; let t=new Date(from+'T00:00:00'); const end=new Date(to+'T00:00:00'); for(; t<=end; t=new Date(t.getTime()+dayMs)){ arr.push(t.toISOString().slice(0,10)); } return arr; }
       function movingAvg(values, w){ const out=[]; for(let i=0;i<values.length;i++){ let s=0,c=0; for(let j=i-w+1;j<=i;j++){ if(j>=0){ s+=values[j]; c++; } } out.push(c? s/c : 0); } return out; }
@@ -2853,6 +3193,8 @@
       function hourMAForLastDays(arr, toKey, fromKey, n){ const keys=lastNDaysKeys(toKey, n).filter(k=>k>=fromKey); const acc=Array(24).fill(0); if(keys.length===0) return acc; for(const k of keys){ const bins=countByHour(arr, k); for(let h=0;h<24;h++) acc[h]+=bins[h]; } for(let h=0;h<24;h++) acc[h]=acc[h]/keys.length; return acc; }
       function painMedianByGran(arr, from, to, typ, gran){ const groups=new Map(); for(const p of arr){ if(typ!=='both' && p.typ!==typ) continue; const d=p.datum||parseISODateKey(p.timestamp); if(d<from||d>to) continue; let g=d; if(gran==='week') g=weekStartKey(d); else if(gran==='month') g=monthKey(d); if(!groups.has(g)) groups.set(g,[]); groups.get(g).push(p.niva); } const out=new Map(); for(const [g,vals] of groups){ const s=vals.slice().sort((a,b)=>a-b); const mid=Math.floor(s.length/2); const val=s.length%2? s[mid] : (s[mid-1]+s[mid])/2; out.set(g,val); } return out; }
       function maWindow(){ return state.gran==='day' ? 7 : 3; }
+      function bristolAvgByGran(arr, from, to, gran){ const groups=new Map(); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d<from||d>to) continue; let g=d; if(gran==='week') g=weekStartKey(d); else if(gran==='month') g=monthKey(d); if(!groups.has(g)) groups.set(g,{sum:0,c:0}); const b=parseInt(it.bristol,10); if(Number.isFinite(b)) { const obj=groups.get(g); obj.sum+=b; obj.c++; } } const out=new Map(); for(const [g,{sum,c}] of groups){ out.set(g, c? (sum/c) : 0); } return out; }
+      function bristolDist(arr, from, to){ const cnt=Array(7).fill(0); for(const it of arr){ const d=parseISODateKey(it.timestamp); if(d<from||d>to) continue; const b=parseInt(it.bristol,10); if(Number.isFinite(b) && b>=1 && b<=7) cnt[b-1]++; } return { labels:['1','2','3','4','5','6','7'], values: cnt }; }
 
       // Drawing primitives
       function drawBars(canvasId, labels, values, opts={}){
@@ -2974,24 +3316,28 @@
       }
 
       function ensureRange(){
-        const today = new Date(); const to = state.to || new Date(today.getFullYear(),today.getMonth(),today.getDate());
-        let from;
+        const today = new Date();
+        // Använd lokal midnatt för att undvika UTC-dagsskifte
+        const toDate = state.to ? new Date((state.to||'')+'T00:00:00') : new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        let fromDate;
         switch(state.rangePreset){
-          case '1d': from = new Date(to.getTime()); break;
-          case '7d': from = new Date(to.getTime()-6*dayMs); break;
-          case '14d': from = new Date(to.getTime()-13*dayMs); break;
-          case '30d': from = new Date(to.getTime()-29*dayMs); break;
-          case '90d': from = new Date(to.getTime()-89*dayMs); break;
-          case '1y': from = new Date(to.getTime()-364*dayMs); break;
-          case 'all': default:
+          case '1d': fromDate = new Date(toDate.getTime()); break;
+          case '7d': fromDate = new Date(toDate.getTime()-6*dayMs); break;
+          case '14d': fromDate = new Date(toDate.getTime()-13*dayMs); break;
+          case '30d': fromDate = new Date(toDate.getTime()-29*dayMs); break;
+          case '90d': fromDate = new Date(toDate.getTime()-89*dayMs); break;
+          case '1y': fromDate = new Date(toDate.getTime()-364*dayMs); break;
+          case 'all': default: {
             const S = (window.AppState || window.State || {});
-            const all = [...(S.pain||[]),(S.pee||[]),(S.fluid||[])].map(x=>parseISODateKey(x.timestamp)).sort();
-            from = all.length? new Date(all[0]+'T00:00:00') : new Date(to.getTime()-29*dayMs);
+            const all = [...(S.pain||[]),(S.pee||[]),(S.stool||[]),(S.fluid||[])].map(x=>parseISODateKey(x.timestamp)).sort();
+            fromDate = all.length? new Date(all[0]+'T00:00:00') : new Date(toDate.getTime()-29*dayMs);
+            break;
+          }
         }
-        const f = (state.from ? new Date(state.from+'T00:00:00') : from);
-        const t = (state.to ? new Date(state.to+'T00:00:00') : to);
+        const f = (state.from ? new Date(state.from+'T00:00:00') : fromDate);
+        const t = toDate;
         const [F,T] = clampRange(f,t);
-        const fk = F.toISOString().slice(0,10); const tk = T.toISOString().slice(0,10);
+        const fk = keyFromLocalDate(F); const tk = keyFromLocalDate(T);
         $('stat2From').value = fk; $('stat2To').value = tk;
         return { from: fk, to: tk };
       }
@@ -3024,7 +3370,7 @@
         const { from, to } = ensureRange();
         const hourMode = (state.gran==='hour');
         const labels = hourMode ? Array.from({length:24},(_,i)=> String(i).padStart(2,'0')) : groupKeys(state.gran, from, to);
-        const S = (window.AppState || window.State || { pain:[], pee:[], fluid:[], settings:{} });
+        const S = (window.AppState || window.State || { pain:[], pee:[], stool:[], fluid:[], settings:{} });
 
         // Översikt
         if (state.page==='overview'){
@@ -3034,6 +3380,8 @@
             drawLine('ov_pain_trend', labels, painH, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelHour });
             const peeH = countByHour(S.pee||[], dayKey); const ma = movingAvg(peeH, 3);
             drawBars('ov_pee_daily', labels, peeH, { label:'Antal', line:{ label:'MA', values:ma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelHour });
+            const stoolH = countByHour(S.stool||[], dayKey); const sma = movingAvg(stoolH, 3);
+            drawBars('ov_stool_daily', labels, stoolH, { label:'Antal', line:{ label:'MA', values:sma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelHour });
             const flH = fluidByHour(S.fluid||[], dayKey); const maF = movingAvg(flH, 3); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
             drawBars('ov_fluid_daily', labels, flH, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelHour });
           } else {
@@ -3041,6 +3389,8 @@
             drawLine('ov_pain_trend', labels, painVals, { label:'Median', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelForGran });
             const cMap = countByDay(S.pee||[], from, to); const cG = sumMapByGran(cMap, state.gran); const counts = labels.map(k=>cG.get(k)||0); const ma = movingAvg(counts, maWindow());
             drawBars('ov_pee_daily', labels, counts, { label:'Antal', line:{ label:`MA`, values:ma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelForGran });
+            const sMap = countByDay(S.stool||[], from, to); const sG = sumMapByGran(sMap, state.gran); const scounts = labels.map(k=>sG.get(k)||0); const sma = movingAvg(scounts, maWindow());
+            drawBars('ov_stool_daily', labels, scounts, { label:'Antal', line:{ label:`MA`, values:sma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelForGran });
             const fMap = fluidByDay(S.fluid||[], from, to); const fG = sumMapByGran(fMap, state.gran); const ml = labels.map(k=>fG.get(k)||0); const maF = movingAvg(ml, maWindow()); const goal=(S.settings&&S.settings.vatska_mal_ml)||2000;
             drawBars('ov_fluid_daily', labels, ml, { label:'ml', line:{ label:'MA', values:maF, color: cssVar('--accent')||'#a78bfa' }, goal, labelFormatter: fmtLabelForGran });
           }
@@ -3126,6 +3476,23 @@
           }
         }
 
+        // Avföring
+        if (state.page==='stool'){
+          if (hourMode){
+            const dayKey = from; const c = countByHour(S.stool||[], dayKey); const ma = movingAvg(c, 3);
+            drawBars('s_daily', labels, c, { label:'Antal', line:{ label:'MA', values:ma, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelHour });
+            // Medel per timme blir ointuitivt för bristol; hoppa över i hour-mode
+            drawLine('s_bristol_avg', labels, Array(24).fill(0), { label:'Medel', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelHour });
+          } else {
+            const sMap2 = countByDay(S.stool||[], from, to); const sG2 = sumMapByGran(sMap2, state.gran); const counts = labels.map(k=>sG2.get(k)||0); const ma2 = movingAvg(counts, maWindow());
+            drawBars('s_daily', labels, counts, { label:'Antal', line:{ label:'MA', values:ma2, color: cssVar('--accent')||'#a78bfa' }, labelFormatter: fmtLabelForGran });
+            const bAvg = bristolAvgByGran(S.stool||[], from, to, state.gran); const bVals = labels.map(k=> bAvg.get(k)||0);
+            drawLine('s_bristol_avg', labels, bVals, { label:'Medel', color: cssVar('--accent')||'#a78bfa', labelFormatter: fmtLabelForGran, maxY:7 });
+          }
+          const dist = bristolDist(S.stool||[], from, to);
+          drawPie('s_bristol_types', dist.labels, dist.values);
+        }
+
         // Vätska
         if (state.page==='fluid'){
           if (hourMode){
@@ -3160,6 +3527,7 @@
           $('stat2-overview').hidden = state.page!=='overview';
           $('stat2-pain').hidden = state.page!=='pain';
           $('stat2-pee').hidden = state.page!=='pee';
+          $('stat2-stool').hidden = state.page!=='stool';
           $('stat2-fluid').hidden = state.page!=='fluid';
           // Show pain type filter only on pain page
           const grp = $('stat2PainType');
@@ -3199,7 +3567,7 @@
           chip.appendChild(del);
           chip.addEventListener('click', ()=>{ state.page=v.page||'overview'; state.rangePreset=v.preset||'30d'; state.from=v.from||null; state.to=v.to||null; state.gran=v.gran||'day'; state.compare=!!v.compare; // update tabs
             qall('.stat2-tabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.page===state.page));
-            $('stat2-overview').hidden = state.page!=='overview'; $('stat2-pain').hidden = state.page!=='pain'; $('stat2-pee').hidden = state.page!=='pee'; $('stat2-fluid').hidden = state.page!=='fluid';
+            $('stat2-overview').hidden = state.page!=='overview'; $('stat2-pain').hidden = state.page!=='pain'; $('stat2-pee').hidden = state.page!=='pee'; $('stat2-stool').hidden = state.page!=='stool'; $('stat2-fluid').hidden = state.page!=='fluid';
             refresh();
           });
           wrap.appendChild(chip);
@@ -3233,7 +3601,7 @@
     (function setupNewUI(){
       const qs = (id) => document.getElementById(id);
       const dash = qs('dashboard');
-      const tabIds = ['smarta','kiss','vatska','stat'];
+      const tabIds = ['smarta','kiss','avforing','vatska','stat'];
       function hideAllTabs(){
         for (const t of tabIds) {
           const sec = qs('tab-' + t); if (sec) sec.hidden = true;
@@ -3247,7 +3615,7 @@
       function openTab(name){ dash.hidden = true; const btn = qs('tabbtn-'+name); if (btn) btn.click(); setBarActive(name==='stat' ? 'navStats' : null); }
 
       // Kortnavigering
-      const map = { cardPain: 'smarta', cardPee: 'kiss', cardFluid: 'vatska', cardStats: 'stat' };
+      const map = { cardPain: 'smarta', cardPee: 'kiss', cardStool: 'avforing', cardFluid: 'vatska', cardStats: 'stat' };
       for (const [cid, tab] of Object.entries(map)) {
         const el = qs(cid); if (!el) continue;
         el.addEventListener('click', ()=> openTab(tab));
@@ -3264,13 +3632,16 @@
       // Quick actions
       qs('quickPain')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
       qs('quickPee')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); qs('btnPeeNow')?.click(); });
+      qs('quickStool')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); qs('btnStoolNow')?.click(); });
       qs('quickFluid')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
 
       // Öppnare för respektive blad
       qs('openPainSheet')?.addEventListener('click', ()=>{ const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
       qs('openPeeSheet')?.addEventListener('click', ()=>{ const d=qs('peeDate'), t=qs('peeTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('peeSheet'); });
+      qs('openStoolSheet')?.addEventListener('click', ()=>{ const d=qs('stoolDate'), t=qs('stoolTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('stoolSheet'); });
       qs('openFluidSheet')?.addEventListener('click', ()=>{ const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
       qs('peeQuickNow')?.addEventListener('click', ()=> qs('btnPeeNow')?.click());
+      qs('stoolQuickNow')?.addEventListener('click', ()=> qs('btnStoolNow')?.click());
 
       // Sheet helpers
       function openSheet(id) {
@@ -3293,11 +3664,12 @@
       [
         ['painSheet','closePainSheet'],['painSheet','closePainSheet2'],
         ['peeSheet','closePeeSheet'],['peeSheet','closePeeSheet2'],
+        ['stoolSheet','closeStoolSheet'],['stoolSheet','closeStoolSheet2'],
         ['fluidSheet','closeFluidSheet'],['fluidSheet','closeFluidSheet2'],
         ['quickSheet','closeQuickSheet'],['quickSheet','closeQuickSheet2']
       ].forEach(([sid,cid])=>{ const b=qs(cid); if (b) b.addEventListener('click', ()=> closeSheet(sid)); });
       // Klick på backdrop
-      ['painSheet','peeSheet','fluidSheet','quickSheet'].forEach(id=>{ const el=qs(id); if(!el) return; el.addEventListener('click',(e)=>{ if(e.target===el) closeSheet(id); }); });
+      ['painSheet','peeSheet','stoolSheet','fluidSheet','quickSheet'].forEach(id=>{ const el=qs(id); if(!el) return; el.addEventListener('click',(e)=>{ if(e.target===el) closeSheet(id); }); });
 
       // Spegla mål till hjälpkort
       function mirrorGoal(){ const gm=qs('goalMirror'); const src=qs('goalMl'); if (gm && src) gm.textContent = src.textContent || src.value || '2000'; }
