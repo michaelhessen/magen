@@ -93,6 +93,7 @@
       --s2: 16px;
       --s3: 24px;
       --rad: 16px;
+      --sheet-actions-h: 64px;
     }
     [data-theme="dark"] {
       /* Mörkt läge */
@@ -164,7 +165,6 @@
     .btn.warn { background: var(--warn); color: #111827; }
     .btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
     .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
-    .btn.chip-btn{ padding:8px 12px; border-radius:999px; font-weight:700; }
 
     main { max-width: 1000px; margin: 10px auto 120px; padding: 0 16px; }
     .page{ max-width:480px; width:100%; margin-inline:auto; padding-inline:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right)); }
@@ -272,10 +272,19 @@
     .chip:has(input:checked) { background: var(--chip-selected-bg); color: var(--chip-selected-fg); border-color: transparent; }
     .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .form-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
-    .form-row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
-    @media (max-width: 420px){ .form-row{ grid-template-columns:1fr; } }
-    .field-card{ background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.2); padding:10px; border-radius:12px; }
-    .form-row .btn.secondary{ height:40px; align-self:end; }
+    /* rad med bara datum */
+    .row-date{ display:grid; grid-template-columns:1fr; gap:12px; }
+    /* rad med två tider bredvid varandra */
+    .row-times{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:380px){ .row-times{ grid-template-columns:1fr; } }
+    .field-card{ box-sizing:border-box; width:100%;
+      background:rgba(100,116,139,.08); border:1px solid rgba(100,116,139,.2);
+      padding:10px; border-radius:12px; }
+
+    /* säkerställ att inget sticker utanför kort/sektionskanter */
+    .sheet .sheet-body, .section, .list, .card, .item{ max-width:100%; }
+    .card, .item{ width:100%; margin-inline:0; }
+    .card > *, .item > *{ min-width:0; }
 
     /* Dashboard */
     #dashboard { margin-top: 10px; }
@@ -312,14 +321,13 @@
     .sheet { background: var(--card); color: var(--text); width: 100%; max-width: 720px; max-height: 90vh; border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); box-shadow: var(--shadow-lg); transform: translateY(100%); transition: transform var(--duration) ease; border: 1px solid rgba(100,116,139,0.2); }
     .sheet.open { transform: translateY(0); }
     .sheet .sheet-header { position: sticky; top: 0; background: var(--card); padding: 14px 16px; border-bottom: 1px solid rgba(100,116,139,0.15); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl); display: flex; align-items: center; gap: 8px; }
-    .sheet .sheet-body { padding: 12px 16px 80px; overflow-y: auto; overflow-x: hidden; max-height: calc(90vh - 120px); touch-action: pan-y; }
+    .sheet .sheet-body{ padding:16px; padding-bottom: calc(var(--sheet-actions-h) + 24px + env(safe-area-inset-bottom)); overflow-y: auto; overflow-x: hidden; max-height: calc(90vh - 120px); touch-action: pan-y; }
     .sheet .sheet-actions{
       position: sticky; bottom: 0;
+      min-height: var(--sheet-actions-h);
       background: linear-gradient(to top, var(--card) 60%, rgba(0,0,0,0));
-      padding: 12px 0 8px;
-      display:flex; gap:10px; justify-content:flex-end;
+      padding: 12px 16px 8px; display:flex; gap:10px; justify-content:flex-end;
     }
-    .sheet .sheet-body{ padding-bottom: 88px; } /* luft över tabbar/FAB */
     .sheet .sheet-body .page{ padding-inline:0; } /* undvik dubbel-padding i sheet */
 
     /* Focus visibility */
@@ -598,17 +606,16 @@
       </div>
       <main class="sheet-body page">
         <form id="painForm" class="form-grid" autocomplete="off">
-          <div class="form-row">
+          <div class="row-date form-row">
             <div class="field-card">
               <label for="painDate">Datum</label>
               <input id="painDate" type="date" required />
             </div>
+          </div>
+          <div class="row-times form-row">
             <div class="field-card">
               <label for="painStart">Starttid</label>
               <input id="painStart" type="time" step="60" required />
-            </div>
-            <div style="align-self: flex-end;">
-              <button id="btnPainNow" class="btn secondary chip-btn" type="button">Nu</button>
             </div>
             <div class="field-card">
               <label for="painEnd">Sluttid (valfritt)</label>
@@ -683,21 +690,16 @@
         <button class="btn ghost" type="button" id="closePeeSheet">Stäng</button>
       </div>
       <div class="sheet-body">
-        <div class="row" style="margin-bottom:8px;">
-          <button id="btnPeeNow" class="btn ok" title="Lägg till med aktuell tid" type="button">Lägg till nu</button>
-          <div class="spacer"></div>
-        </div>
-        <div class="row">
+        <div class="row-date form-row">
           <div class="field-card">
             <label for="peeDate">Datum</label>
             <input id="peeDate" type="date" />
           </div>
+        </div>
+        <div class="row-times form-row">
           <div class="field-card">
             <label for="peeTime">Tid</label>
             <input id="peeTime" type="time" step="60" />
-          </div>
-          <div style="align-self: flex-end;">
-            <button id="btnPeeSetNow" class="btn secondary" type="button">Nu</button>
           </div>
           <div style="align-self: flex-end;">
             <button id="btnPeeAdd" class="btn" title="Lägg till vald tid" type="button">Lägg till</button>
@@ -719,17 +721,16 @@
       </div>
       <div class="sheet-body">
         <form id="fluidForm">
-          <div class="row">
+          <div class="row-date form-row">
             <div class="field-card">
               <label for="fluidDate">Datum</label>
               <input id="fluidDate" type="date" required />
             </div>
+          </div>
+          <div class="row-date form-row">
             <div class="field-card">
               <label for="fluidTime">Tid</label>
               <input id="fluidTime" type="time" step="60" required />
-            </div>
-            <div style="align-self: flex-end;">
-              <button id="btnFluidNow" class="btn secondary" type="button">Nu</button>
             </div>
           </div>
           <div class="row">
@@ -1649,7 +1650,6 @@
           els.painDate = document.getElementById('painDate');
           els.painStart = document.getElementById('painStart');
           els.painEnd = document.getElementById('painEnd');
-          els.btnPainNow = document.getElementById('btnPainNow');
           els.painLevel = document.getElementById('painLevel');
           els.painScaleText = document.getElementById('painScaleText');
           els.painForm = document.getElementById('painForm');
@@ -1676,9 +1676,7 @@
           };
 
           // pee
-          els.btnPeeNow = document.getElementById('btnPeeNow');
           els.btnPeeAdd = document.getElementById('btnPeeAdd');
-          els.btnPeeSetNow = document.getElementById('btnPeeSetNow');
           els.peeDate = document.getElementById('peeDate');
           els.peeTime = document.getElementById('peeTime');
           els.peeList = document.getElementById('peeList');
@@ -1688,7 +1686,6 @@
           els.fluidForm = document.getElementById('fluidForm');
           els.fluidDate = document.getElementById('fluidDate');
           els.fluidTime = document.getElementById('fluidTime');
-          els.btnFluidNow = document.getElementById('btnFluidNow');
           els.fluidVol = document.getElementById('fluidVol');
           els.fluidType = document.getElementById('fluidType');
           els.goalMl = document.getElementById('goalMl');
@@ -1717,7 +1714,6 @@
           els.painForm.addEventListener('change', onPainFormChange);
           els.painForm.addEventListener('input', onPainFormChange);
           els.painForm.addEventListener('submit', onPainSubmit);
-          if (els.btnPainNow) els.btnPainNow.addEventListener('click', ()=>{ setNow(els.painDate, els.painStart); delete els.painDate.dataset.dirty; delete els.painStart.dataset.dirty; });
           // filters
           els.painFilters.btnApply.addEventListener('click', applyFilters);
           els.painFilters.btnClr.addEventListener('click', resetFilters);
@@ -1730,12 +1726,9 @@
             });
           }
           // pee
-          els.btnPeeNow.addEventListener('click', addPeeNow);
           els.btnPeeAdd.addEventListener('click', addPeeCustom);
-          if (els.btnPeeSetNow) els.btnPeeSetNow.addEventListener('click', ()=>{ setNow(els.peeDate, els.peeTime); delete els.peeDate.dataset.dirty; delete els.peeTime.dataset.dirty; });
           // fluid
           els.fluidForm.addEventListener('submit', onFluidSubmit);
-          if (els.btnFluidNow) els.btnFluidNow.addEventListener('click', ()=>{ setNow(els.fluidDate, els.fluidTime); delete els.fluidDate.dataset.dirty; delete els.fluidTime.dataset.dirty; });
           // modal close
           els.modalClose.addEventListener('click', closeModal);
           els.modalBackdrop.addEventListener('click', (e)=>{ if (e.target===els.modalBackdrop) closeModal(); });
@@ -2555,14 +2548,14 @@
 
       // Quick actions
       qs('quickPain')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
-      qs('quickPee')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); qs('btnPeeNow')?.click(); });
+      qs('quickPee')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); addPeeNow(); });
       qs('quickFluid')?.addEventListener('click', ()=>{ closeSheet('quickSheet'); const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
 
       // Öppnare för respektive blad
       qs('openPainSheet')?.addEventListener('click', ()=>{ const d=qs('painDate'), t=qs('painStart'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('painSheet'); });
       qs('openPeeSheet')?.addEventListener('click', ()=>{ const d=qs('peeDate'), t=qs('peeTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('peeSheet'); });
       qs('openFluidSheet')?.addEventListener('click', ()=>{ const d=qs('fluidDate'), t=qs('fluidTime'); if(d&&t){ setNow(d,t); delete d.dataset.dirty; delete t.dataset.dirty; } openSheet('fluidSheet'); });
-      qs('peeQuickNow')?.addEventListener('click', ()=> qs('btnPeeNow')?.click());
+      qs('peeQuickNow')?.addEventListener('click', addPeeNow);
 
       // Sheet helpers
       function openSheet(id) {
