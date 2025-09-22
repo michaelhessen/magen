@@ -2569,6 +2569,7 @@
           State.stool.unshift({ id: Utils.newUUID(), timestamp: iso, bristol: b, anteckning: note });
           Storage.saveAll(State); renderStoolList(); announce('Avföring sparad.'); showToast('Avföring registrerad');
           if (els.stoolDate && els.stoolTime) { setNow(els.stoolDate, els.stoolTime); delete els.stoolDate.dataset.dirty; delete els.stoolTime.dataset.dirty; }
+          if (typeof window !== 'undefined' && typeof window.closeSheet === 'function') window.closeSheet('stoolSheet');
         }
         function getSelectedBristol(){
           const r = document.querySelector('input[name="stoolBristol"]:checked');
